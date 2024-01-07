@@ -1,0 +1,94 @@
+name: HyperLib
+
+on:
+  push:
+    branches: [ master ]
+    
+env:
+  VERSION: "0.0"
+  PROFILE_WIN_32: win-x86
+  PROFILE_WIN_64: win-x64
+  PROFILE_LINUX_64: linux-x64
+  PROFILE_OSX_64: osx-x64
+  SOLUTION_FILE: HyperLib.sln
+  HYPERLIB_PROJECT: ${{github.workspace}}\HyperLib\HyperLib.csproj
+  HYPERLIB_CLI_PROJECT: ${{github.workspace}}\HyperLib.CLI\HyperLib.CLI.csproj
+  NUGET_SOURCE: https://api.nuget.org/v3/index.json
+
+jobs:
+
+  build:
+
+    # Use the current configuration as the job name.
+    name: ${{matrix.configuration}}
+
+    # Use the 'windows-2022' image for CI.
+    runs-on: windows-2022
+
+    # Use the following configurations for building.
+    strategy:
+      matrix:
+        configuration: [ Debug, Release ]
+        
+    steps:
+
+    # Downloads the latest Git repository for HyperLib.
+    - name: Clone HyperLib
+      uses: actions/checkout@v2
+
+    # Installs the required SDKs for .NET.
+    - name: Install .NET SDK
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 8.0.x
+
+    # Restores the NuGet packages from the solution for all projects.
+    - name: Restore NuGet Packages
+      working-directory: ${{github.workspace}}
+      run: nuget restore ${{env.SOLUTION_FILE}}
+      
+    # Patches the version number using the last 'Windows' workflow run number and the latest 'HyperLib' workflow run number.
+    - name: Patch Version Number
+      run: |
+        $version = "${{env.VERSION}}." + ${{github.run_number}}
+        echo "VERSION_RESOLVE=$version" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+        
+    # Builds HyperLib using the PowerShell script.
+    - name: Build HyperLib
+      working-directory: ${{github.workspace}}
+      run: ./Build.ps1 -BuildAll -Clean -CommitID ${{github.sha}} -Configuration ${{matrix.configuration}} -Version ${{env.VERSION_RESOLVE}}
+      
+    # Uploads the compiled HyperLib artifacts.
+    - name: Upload HyperLib Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: HyperLib-${{matrix.configuration}}
+        path: ${{github.workspace}}\HyperLib\bin\${{matrix.configuration}}\net8.0\publish\
+        
+    # Uploads the compiled HyperLib.CLI artifacts for 'win-x86'.
+    - name: Upload HyperLib.CLI Artifacts for Windows (x86)
+      uses: actions/upload-artifact@v2
+      with:
+        name: HyperLib.CLI-${{matrix.configuration}}-${{env.PROFILE_WIN_32}}
+        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net6.0\${{env.PROFILE_WIN_32}}\
+        
+    # Uploads the compiled HyperLib.CLI artifacts for 'win-x64'.
+    - name: Upload HyperLib.CLI Artifacts for Windows (x64)
+      uses: actions/upload-artifact@v2
+      with:
+        name: HyperLib.CLI-${{matrix.configuration}}-${{env.PROFILE_WIN_64}}
+        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net6.0\${{env.PROFILE_WIN_64}}\
+        
+    # Uploads the compiled HyperLib.CLI artifacts for 'linux-x64'.
+    - name: Upload HyperLib.CLI Artifacts for Linux
+      uses: actions/upload-artifact@v2
+      with:
+        name: HyperLib.CLI-${{matrix.configuration}}-${{env.PROFILE_LINUX_64}}
+        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net6.0\${{env.PROFILE_LINUX_64}}\
+        
+    # Uploads the compiled HyperLib.CLI artifacts for 'osx-x64'.
+    - name: Upload HyperLib.CLI Artifacts for macOS
+      uses: actions/upload-artifact@v2
+      with:
+        name: HyperLib.CLI-${{matrix.configuration}}-${{env.PROFILE_OSX_64}}
+        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net6.0\${{env.PROFILE_OSX_64}}\
