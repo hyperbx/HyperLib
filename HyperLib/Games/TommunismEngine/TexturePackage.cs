@@ -1,10 +1,6 @@
-﻿using Amicitia.IO.Binary;
-using Amicitia.IO.Streams;
-using HyperLib.Helpers;
+﻿using HyperLib.Helpers;
 using HyperLib.Helpers.Converters;
-using HyperLib.IO;
 using Newtonsoft.Json;
-using System.Text;
 
 namespace HyperLib.Games.TommunismEngine
 {
@@ -101,19 +97,13 @@ namespace HyperLib.Games.TommunismEngine
             }
         }
 
-        public class Texture
+        public class Texture(byte[] in_data, byte[] in_attributes)
         {
             [JsonIgnore]
-            public byte[] Data { get; set; }
+            public byte[] Data { get; set; } = in_data;
 
             [JsonConverter(typeof(ByteArrayConverter))]
-            public byte[] Attributes { get; set; } = new byte[9];
-
-            public Texture(byte[] in_data, byte[] in_attributes)
-            {
-                Data = in_data;
-                Attributes = in_attributes;
-            }
+            public byte[] Attributes { get; set; } = in_attributes;
         }
     }
 }

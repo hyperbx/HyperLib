@@ -2,7 +2,7 @@
 {
     public class BinaryHelper
     {
-        public static byte[] StringToByteArray(string in_hex)
+        public static byte[] HexStringToByteArray(string in_hex)
         {
             in_hex = in_hex.Replace(" ", "");
 

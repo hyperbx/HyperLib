@@ -1,8 +1,4 @@
-﻿using Amicitia.IO.Binary;
-using Amicitia.IO.Streams;
-using HyperLib.Helpers;
-using HyperLib.IO;
-using System.Text;
+﻿using HyperLib.Helpers;
 
 namespace HyperLib.Games.TommunismEngine
 {
@@ -12,8 +8,8 @@ namespace HyperLib.Games.TommunismEngine
 
         public bool IsIndexOnly { get; set; } = true;
 
-        public List<DirectoryNode> Directories { get; set; } = new();
-        public List<FileNode> Files { get; set; } = new();
+        public List<DirectoryNode> Directories { get; set; } = [];
+        public List<FileNode> Files { get; set; } = [];
 
         public Archive() { }
 
@@ -53,7 +49,7 @@ namespace HyperLib.Games.TommunismEngine
             for (int i = 0; i < dirCount; i++)
             {
                 if (reader.Position > stringTableOffset + dirStringTableLength)
-                    throw new IndexOutOfRangeException("This directory's name is outside the bounds of the string table!");
+                    throw new IndexOutOfRangeException("This directory's name is outside the bounds of the string table.");
 
                 Directories.Add(new DirectoryNode(dirInfos[i], reader.ReadString(StringBinaryFormat.NullTerminated)));
             }
@@ -61,7 +57,7 @@ namespace HyperLib.Games.TommunismEngine
             for (int i = 0; i < fileCount; i++)
             {
                 if (reader.Position > stringTableOffset + stringTableLength)
-                    throw new IndexOutOfRangeException("This file's name is outside the bounds of the string table!");
+                    throw new IndexOutOfRangeException("This file's name is outside the bounds of the string table.");
 
                 Files.Add(new FileNode(fileInfos[i], reader.ReadString(StringBinaryFormat.NullTerminated)));
             }
@@ -113,15 +109,10 @@ namespace HyperLib.Games.TommunismEngine
             public int ParentIndex;
         }
 
-        public class DirectoryNode
+        public class DirectoryNode(Archive.DirectoryInfo in_info)
         {
-            public DirectoryInfo Info { get; set; }
-            public string Name { get; set; }
-
-            public DirectoryNode(DirectoryInfo in_info)
-            {
-                Info = in_info;
-            }
+            public DirectoryInfo Info { get; set; } = in_info;
+            public string Name { get; set; } = string.Empty;
 
             public DirectoryNode(DirectoryInfo in_info, string in_name) : this(in_info)
             {
@@ -129,16 +120,11 @@ namespace HyperLib.Games.TommunismEngine
             }
         }
 
-        public class FileNode
+        public class FileNode(Archive.FileInfo in_info)
         {
-            public FileInfo Info { get; set; }
-            public string Name { get; set; }
+            public FileInfo Info { get; set; } = in_info;
+            public string Name { get; set; } = string.Empty;
             public byte[] Data { get; set; }
-
-            public FileNode(FileInfo in_info)
-            {
-                Info = in_info;
-            }
 
             public FileNode(FileInfo in_info, string in_name) : this(in_info)
             {

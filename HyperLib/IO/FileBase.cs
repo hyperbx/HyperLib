@@ -18,7 +18,7 @@
         public virtual EWriteMode WriteMode { get; set; } = EWriteMode.Logical;
 
         /// <summary>
-        /// Leaves the <see cref="Stream"/> open after saving.
+        /// Leaves the <see cref="Stream"/> open after writing.
         /// <para>If left open, the stream must manually be disposed using the <see cref="Dispose"/> method.</para>
         /// </summary>
         public virtual bool LeaveOpen { get; set; } = false;
@@ -69,25 +69,8 @@
             {
                 case EWriteMode.Logical:
                 {
-                    if (LeaveOpen && in_path == Location)
-                    {
-                        // Create temporary file location so we can still read from the open stream.
-                        string temp = Path.Combine(Path.GetDirectoryName(Location),
-                            $".temp.{Path.GetRandomFileName()}.{Path.GetFileNameWithoutExtension(Location)}{Extension}#");
-
-                        using (var fileStream = File.Create(temp))
-                            Write(fileStream);
-
-                        Dispose();
-
-                        // Move temporary file to the final path.
-                        File.Move(temp, in_path, true);
-
-                        break;
-                    }
-
-                    using (var fileStream = File.Create(in_path))
-                        Write(fileStream);
+                    using (var stream = new FileStream(in_path, FileMode.Create, FileAccess.ReadWrite))
+                        Write(stream);
 
                     break;
                 }
@@ -96,7 +79,6 @@
                 {
                     if (!string.IsNullOrEmpty(Location) && File.Exists(Location))
                     {
-                        // Don't bother copying if it's the same location.
                         if (in_path == Location)
                             return;
 
@@ -104,8 +86,8 @@
                         File.Copy(Location, in_path, true);
                     }
 
-                    using (var fileStream = new FileStream(in_path, FileMode.Open, FileAccess.ReadWrite))
-                        Write(fileStream);
+                    using (var stream = new FileStream(in_path, FileMode.Open, FileAccess.ReadWrite))
+                        Write(stream);
 
                     break;
                 }
@@ -124,7 +106,7 @@
 
         public virtual void Import(string in_path) { }
 
-        public virtual void Export(string in_path) { }
+        public virtual void Export(string in_path = "") { }
 
         public void Dispose()
         {
