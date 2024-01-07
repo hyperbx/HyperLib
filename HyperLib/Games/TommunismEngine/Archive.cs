@@ -70,7 +70,7 @@ namespace HyperLib.Games.TommunismEngine
                 file.Data = file.Read(reader);
         }
 
-        public override void Write(Stream in_stream, bool in_isOverwrite = true)
+        public override unsafe void Write(Stream in_stream, bool in_isOverwrite = true)
         {
             var writer = new BinaryValueWriterEx(in_stream, StreamOwnership.Retain, Endianness.Little, Encoding.UTF8);
 
@@ -95,7 +95,7 @@ namespace HyperLib.Games.TommunismEngine
             var fileTableOffset = writer.Position;
 
             // Write padding for later.
-            writer.WriteNullBytes((sizeof(int) * 3) * Files.Count);
+            writer.WriteNullBytes(sizeof(FileInfo) * Files.Count);
 
             writer.CreateTempField<int>("dirStringTableLength");
             writer.CreateTempField<int>("fileStringTableLength");
