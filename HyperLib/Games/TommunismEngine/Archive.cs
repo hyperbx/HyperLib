@@ -30,7 +30,7 @@ namespace HyperLib.Games.TommunismEngine
 
         public override void Read(Stream in_stream)
         {
-            var reader = new BinaryValueReader(in_stream, StreamOwnership.Transfer, Endianness.Little, Encoding.UTF8);
+            var reader = new BinaryValueReader(in_stream, StreamOwnership.Retain, Endianness.Little, Encoding.UTF8);
 
             var dirCount = reader.ReadInt32();
             var dirInfos = new List<DirectoryInfo>();

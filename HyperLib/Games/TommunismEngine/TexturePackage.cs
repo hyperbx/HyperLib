@@ -20,7 +20,7 @@ namespace HyperLib.Games.TommunismEngine
 
         public override void Read(Stream in_stream)
         {
-            var reader = new BinaryValueReader(in_stream, StreamOwnership.Transfer, Endianness.Little, Encoding.UTF8);
+            var reader = new BinaryValueReader(in_stream, StreamOwnership.Retain, Endianness.Little, Encoding.UTF8);
 
             var textureCount = reader.ReadInt32();
 
@@ -42,7 +42,7 @@ namespace HyperLib.Games.TommunismEngine
 
         public override void Write(Stream in_stream, bool in_isOverwrite = true)
         {
-            var writer = new BinaryValueWriterEx(in_stream, StreamOwnership.Transfer, Endianness.Little, Encoding.UTF8);
+            var writer = new BinaryValueWriterEx(in_stream, StreamOwnership.Retain, Endianness.Little, Encoding.UTF8);
 
             writer.Write(Textures.Count);
 
