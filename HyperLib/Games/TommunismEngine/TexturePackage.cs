@@ -1,4 +1,5 @@
 ﻿using Amicitia.IO.Binary;
+using Amicitia.IO.Streams;
 using HyperLib.Helpers;
 using HyperLib.Helpers.Converters;
 using HyperLib.IO;
@@ -9,18 +10,17 @@ namespace HyperLib.Games.TommunismEngine
 {
     public class TexturePackage : FileBase
     {
+        public override string Extension => ".tp";
+
         public List<Texture> Textures { get; set; } = [];
 
         public TexturePackage() { }
 
-        public TexturePackage(string in_filePath) : base(in_filePath)
-        {
-            Read(in_filePath);
-        }
+        public TexturePackage(string in_path) : base(in_path) { }
 
-        public void Read(string in_path)
+        public override void Read(Stream in_stream)
         {
-            var reader = new BinaryValueReader(in_path, Endianness.Little, Encoding.UTF8);
+            var reader = new BinaryValueReader(in_stream, StreamOwnership.Transfer, Endianness.Little, Encoding.UTF8);
 
             var textureCount = reader.ReadInt32();
 
@@ -40,9 +40,9 @@ namespace HyperLib.Games.TommunismEngine
             }
         }
 
-        public void Write(string in_path)
+        public override void Write(Stream in_stream, bool in_isOverwrite = true)
         {
-            var writer = new BinaryValueWriterEx(in_path, Endianness.Little, Encoding.UTF8);
+            var writer = new BinaryValueWriterEx(in_stream, StreamOwnership.Transfer, Endianness.Little, Encoding.UTF8);
 
             writer.Write(Textures.Count);
 
@@ -62,10 +62,12 @@ namespace HyperLib.Games.TommunismEngine
             }
         }
 
-        public void Import(string in_path)
+        public override void Import(string in_path)
         {
             foreach (var file in Directory.EnumerateFiles(in_path, "*.png"))
             {
+                Logger.Log($"Importing texture: {FileSystemHelper.GetDirectoryNameFromRoot(in_path, file)}", "TommunismEngine.TexturePackage");
+
                 var textureData = File.ReadAllBytes(file);
                 var attributeFile = Path.Combine(Path.GetDirectoryName(file), Path.ChangeExtension(file, ".json"));
 
@@ -78,17 +80,24 @@ namespace HyperLib.Games.TommunismEngine
             }
         }
 
-        public void Export(string in_path = "")
+        public override void Export(string in_path = "")
         {
             if (string.IsNullOrEmpty(in_path))
                 in_path = FileSystemHelper.GetDirectoryWithFileName(Location);
 
             var dir = Directory.CreateDirectory(in_path).FullName;
+            var count = Textures.Count;
 
-            for (int i = 0; i < Textures.Count; i++)
+            Logger.Log($"Exporting {count} {StringHelper.Pluralise("texture", count)}: {Path.GetFileName(Location)}", "TommunismEngine.TexturePackage");
+
+            for (int i = 0; i < count; i++)
             {
-                File.WriteAllBytes(Path.Combine(dir, $"{i}.png"), Textures[i].Data);
-                File.WriteAllText(Path.Combine(dir, $"{i}.json"), JsonConvert.SerializeObject(Textures[i], Formatting.Indented));
+                var texture = Textures[i];
+
+                File.WriteAllBytes(Path.Combine(dir, $"{i}.png"), texture.Data);
+
+                // Export metadata for each image for extra data.
+                File.WriteAllText(Path.Combine(dir, $"{i}.json"), JsonConvert.SerializeObject(texture, Formatting.Indented));
             }
         }
 

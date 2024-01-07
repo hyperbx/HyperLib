@@ -1,4 +1,5 @@
 ﻿using Amicitia.IO.Binary;
+using Amicitia.IO.Streams;
 using HyperLib.Helpers;
 using HyperLib.IO;
 using System.Text;
@@ -7,19 +8,29 @@ namespace HyperLib.Games.TommunismEngine
 {
     public class Archive : FileBase
     {
-        public List<DirectoryNode> Directories = new();
-        public List<FileNode> Files = new();
+        public override string Extension => ".dat";
+
+        public bool IsIndexOnly { get; set; } = true;
+
+        public List<DirectoryNode> Directories { get; set; } = new();
+        public List<FileNode> Files { get; set; } = new();
 
         public Archive() { }
 
-        public Archive(string in_path) : base(in_path)
+        public Archive(string in_path, bool in_isIndexOnly = true)
         {
+            Read(in_path, in_isIndexOnly);
+        }
+
+        public void Read(string in_path, bool in_isIndexOnly)
+        {
+            IsIndexOnly = in_isIndexOnly;
             Read(in_path);
         }
 
-        public void Read(string in_path, bool in_isIndexOnly = true)
+        public override void Read(Stream in_stream)
         {
-            var reader = new BinaryValueReader(in_path, Endianness.Little, Encoding.UTF8);
+            var reader = new BinaryValueReader(in_stream, StreamOwnership.Transfer, Endianness.Little, Encoding.UTF8);
 
             var dirCount = reader.ReadInt32();
             var dirInfos = new List<DirectoryInfo>();
@@ -55,14 +66,14 @@ namespace HyperLib.Games.TommunismEngine
                 Files.Add(new FileNode(fileInfos[i], reader.ReadString(StringBinaryFormat.NullTerminated)));
             }
 
-            if (in_isIndexOnly)
+            if (IsIndexOnly)
                 return;
 
             foreach (var file in Files)
                 file.Data = file.Read(reader);
         }
 
-        public void Export(string in_path = "")
+        public override void Export(string in_path = "")
         {
             if (string.IsNullOrEmpty(in_path))
                 in_path = FileSystemHelper.GetDirectoryWithFileName(Location);
@@ -71,12 +82,21 @@ namespace HyperLib.Games.TommunismEngine
 
             foreach (var file in Files)
             {
-                var filePath = Path.Combine(dir, file.Name);
-                var dirPath = Path.GetDirectoryName(filePath);
+                Logger.Log($"Exporting file: {file.Name}", "TommunismEngine.Archive");
 
-                Directory.CreateDirectory(dirPath);
+                try
+                {
+                    var filePath = Path.Combine(dir, file.Name);
+                    var dirPath = Path.GetDirectoryName(filePath);
 
-                File.WriteAllBytes(filePath, file.Data);
+                    Directory.CreateDirectory(dirPath);
+
+                    File.WriteAllBytes(filePath, file.Data);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Exporting failed: {file}\nReason: {ex}", "TommunismEngine.Archive");
+                }
             }
         }
 

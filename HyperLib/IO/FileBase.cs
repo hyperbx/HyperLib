@@ -1,14 +1,147 @@
 ﻿namespace HyperLib.IO
 {
-    public class FileBase
+    public class FileBase : IDisposable
     {
-        public string Location { get; set; }
+        /// <summary>
+        /// The location of this file.
+        /// </summary>
+        public string Location { get; private set; }
 
-        public FileBase() { }
+        /// <summary>
+        /// The extension used for the file name.
+        /// </summary>
+        public virtual string Extension { get; }
 
-        public FileBase(string in_path) : this()
+        /// <summary>
+        /// The method used for writing the file.
+        /// </summary>
+        public virtual EWriteMode WriteMode { get; set; } = EWriteMode.Logical;
+
+        /// <summary>
+        /// Leaves the <see cref="Stream"/> open after saving.
+        /// <para>If left open, the stream must manually be disposed using the <see cref="Dispose"/> method.</para>
+        /// </summary>
+        public virtual bool LeaveOpen { get; set; } = false;
+
+        public Stream Stream { get; private set; }
+
+        public FileBase(EWriteMode in_writeMode = EWriteMode.Logical, bool in_isLeaveOpen = false)
+        {
+            WriteMode = in_writeMode;
+            LeaveOpen = in_isLeaveOpen;
+        }
+
+        public FileBase(string in_path, EWriteMode in_writeMode = EWriteMode.Logical, bool in_isLeaveOpen = false)
+            : this(in_writeMode, in_isLeaveOpen)
+        {
+            Read(in_path);
+        }
+
+        public virtual void Read(string in_path)
         {
             Location = in_path;
+
+            if (string.IsNullOrEmpty(in_path))
+                throw new ArgumentNullException(nameof(in_path));
+
+            if (!File.Exists(in_path))
+                throw new FileNotFoundException("The specified file does not exist.", in_path);
+
+            Stream = new FileStream(in_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+            Read(Stream);
+        }
+
+        public virtual void Read(Stream in_stream)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual void Write(string in_path, bool in_isOverwrite = true)
+        {
+            if (string.IsNullOrEmpty(in_path))
+                throw new ArgumentNullException(nameof(in_path));
+
+            if (!in_isOverwrite && File.Exists(in_path))
+                throw new IOException("The specified file already exists.");
+
+            switch (WriteMode)
+            {
+                case EWriteMode.Logical:
+                {
+                    if (LeaveOpen && in_path == Location)
+                    {
+                        // Create temporary file location so we can still read from the open stream.
+                        string temp = Path.Combine(Path.GetDirectoryName(Location),
+                            $".temp.{Path.GetRandomFileName()}.{Path.GetFileNameWithoutExtension(Location)}{Extension}#");
+
+                        using (var fileStream = File.Create(temp))
+                            Write(fileStream);
+
+                        Dispose();
+
+                        // Move temporary file to the final path.
+                        File.Move(temp, in_path, true);
+
+                        break;
+                    }
+
+                    using (var fileStream = File.Create(in_path))
+                        Write(fileStream);
+
+                    break;
+                }
+
+                case EWriteMode.Fixed:
+                {
+                    if (!string.IsNullOrEmpty(Location) && File.Exists(Location))
+                    {
+                        // Don't bother copying if it's the same location.
+                        if (in_path == Location)
+                            return;
+
+                        // Copy the fixed file to the new writing location.
+                        File.Copy(Location, in_path, true);
+                    }
+
+                    using (var fileStream = new FileStream(in_path, FileMode.Open, FileAccess.ReadWrite))
+                        Write(fileStream);
+
+                    break;
+                }
+            }
+        }
+
+        public virtual void Write(Stream in_stream, bool in_isOverwrite = true)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual void Write(bool in_isOverwrite = true)
+        {
+            Write(Location, in_isOverwrite);
+        }
+
+        public virtual void Import(string in_path) { }
+
+        public virtual void Export(string in_path) { }
+
+        public void Dispose()
+        {
+            Stream?.Dispose();
+        }
+
+        public enum EWriteMode
+        {
+            /// <summary>
+            /// Writes to the file directly.
+            /// </summary>
+            Fixed,
+
+            /// <summary>
+            /// Writes the entire file from scratch.
+            /// </summary>
+            Logical
         }
     }
 }

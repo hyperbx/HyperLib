@@ -1,6 +1,7 @@
 ﻿using Amicitia.IO;
 using Amicitia.IO.Binary;
 using Amicitia.IO.Streams;
+using HyperLib.IO.Extensions;
 using System.Text;
 
 namespace HyperLib.IO
@@ -23,7 +24,7 @@ namespace HyperLib.IO
             Seek(in_offset, SeekOrigin.Begin);
 
             // Create padding.
-            WriteNullBytes(in_size);
+            this.WriteNullBytes(in_size);
 
             if (_tempFields.ContainsKey(in_name))
             {
@@ -49,7 +50,22 @@ namespace HyperLib.IO
             CreateTempField<T>(in_name, Position);
         }
 
-        public void JumpToTempField(string in_name, bool in_removeOffset = true)
+        public void WriteTempField<T>(string in_name, T in_value, bool in_removeOffset = true) where T : unmanaged
+        {
+            if (!_tempFields.ContainsKey(in_name))
+                return;
+
+            var pos = Position;
+
+            SeekToTempField(in_name, false);
+            Write(in_value);
+            Seek(pos, SeekOrigin.Begin);
+
+            if (in_removeOffset)
+                _tempFields.Remove(in_name);
+        }
+
+        public void SeekToTempField(string in_name, bool in_removeOffset = true)
         {
             if (!_tempFields.ContainsKey(in_name))
                 return;
@@ -58,26 +74,6 @@ namespace HyperLib.IO
 
             if (in_removeOffset)
                 _tempFields.Remove(in_name);
-        }
-
-        public void WriteTempField<T>(string in_name, T in_value, bool in_removeOffset = true) where T : unmanaged
-        {
-            if (!_tempFields.ContainsKey(in_name))
-                return;
-
-            var pos = Position;
-
-            JumpToTempField(in_name, false);
-            Write(in_value);
-            Seek(pos, SeekOrigin.Begin);
-
-            if (in_removeOffset)
-                _tempFields.Remove(in_name);
-        }
-
-        public void WriteNullBytes(int in_count)
-        {
-            WriteBytes(new byte[in_count]);
         }
     }
 }
