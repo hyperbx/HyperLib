@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HyperLib.CLI", "HyperLib.CL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HyperLib", "HyperLib\HyperLib.csproj", "{B35D790A-BD46-40CB-B6A0-222A6C35D1B8}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HyperLib.Shared", "HyperLib.Shared\HyperLib.Shared.shproj", "{41A1DF5B-03B9-4B60-B14E-3ED468F0FA1D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,5 +29,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40B663AA-8BE3-4978-85EB-D942574B6728}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		HyperLib.Shared\HyperLib.Shared.projitems*{41a1df5b-03b9-4b60-b14e-3ed468f0fa1d}*SharedItemsImports = 13
+		HyperLib.Shared\HyperLib.Shared.projitems*{92dbde52-9d1d-4bee-a4e3-fb1e8a47a65d}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

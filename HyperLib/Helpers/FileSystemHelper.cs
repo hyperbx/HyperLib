@@ -16,5 +16,24 @@
 
             return relativePath;
         }
+
+        public static string TruncateLastExtension(string in_filePath)
+        {
+            return Path.Combine(Path.GetDirectoryName(in_filePath), Path.GetFileNameWithoutExtension(in_filePath));
+        }
+
+        public static EFileSystemItemType GetFileSystemItemType(string in_path)
+        {
+            if (Directory.Exists(in_path))
+                return EFileSystemItemType.Directory;
+
+            return EFileSystemItemType.File;
+        }
+
+        public enum EFileSystemItemType
+        {
+            File,
+            Directory
+        }
     }
 }

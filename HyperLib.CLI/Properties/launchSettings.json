@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "HyperLib.CLI": {
+      "commandName": "Project"
+    }
+  }
+}
