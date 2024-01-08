@@ -12,7 +12,7 @@ namespace HyperLib.CLI
                 return;
             }
 
-            CommandProcessor.ExecuteArguments(CommandProcessor.ParseArguments(in_args)); // ?
+            CommandProcessor.ExecuteArguments(CommandProcessor.ParseArguments(in_args));
         }
     }
 }
