@@ -70,25 +70,25 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: HyperLib.CLI-${{matrix.configuration}}-${{env.PROFILE_WIN_32}}
-        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net6.0\${{env.PROFILE_WIN_32}}\
+        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net8.0\${{env.PROFILE_WIN_32}}\
         
     # Uploads the compiled HyperLib.CLI artifacts for 'win-x64'.
     - name: Upload HyperLib.CLI Artifacts for Windows (x64)
       uses: actions/upload-artifact@v2
       with:
         name: HyperLib.CLI-${{matrix.configuration}}-${{env.PROFILE_WIN_64}}
-        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net6.0\${{env.PROFILE_WIN_64}}\
+        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net8.0\${{env.PROFILE_WIN_64}}\
         
     # Uploads the compiled HyperLib.CLI artifacts for 'linux-x64'.
     - name: Upload HyperLib.CLI Artifacts for Linux
       uses: actions/upload-artifact@v2
       with:
         name: HyperLib.CLI-${{matrix.configuration}}-${{env.PROFILE_LINUX_64}}
-        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net6.0\${{env.PROFILE_LINUX_64}}\
+        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net8.0\${{env.PROFILE_LINUX_64}}\
         
     # Uploads the compiled HyperLib.CLI artifacts for 'osx-x64'.
     - name: Upload HyperLib.CLI Artifacts for macOS
       uses: actions/upload-artifact@v2
       with:
         name: HyperLib.CLI-${{matrix.configuration}}-${{env.PROFILE_OSX_64}}
-        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net6.0\${{env.PROFILE_OSX_64}}\
+        path: ${{github.workspace}}\HyperLib.CLI\bin\${{matrix.configuration}}\net8.0\${{env.PROFILE_OSX_64}}\
