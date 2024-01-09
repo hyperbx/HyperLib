@@ -7,6 +7,11 @@
             return in_path.Replace('\\', '/');
         }
 
+        public static string ConvertPathToWindows(string in_path)
+        {
+            return in_path.Replace('/', '\\');
+        }
+
         public static string ChangeFileName(string in_filePath, string in_newFileName, bool in_isOriginalExtensions = true)
         {
             if (in_isOriginalExtensions)
@@ -25,7 +30,7 @@
             var relativePath = in_path[in_rootDir.Length..].TrimStart(Path.DirectorySeparatorChar);
 
             if (in_isConvertToUnixSeparators)
-                relativePath = relativePath.Replace('\\', '/');
+                relativePath = ConvertPathToUnix(relativePath);
 
             return relativePath;
         }

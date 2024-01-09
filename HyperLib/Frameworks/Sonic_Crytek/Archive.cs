@@ -1,4 +1,5 @@
 ﻿using HyperLib.Helpers;
+using HyperLib.IO;
 using HyperLib.IO.Extensions;
 
 namespace HyperLib.Frameworks.Sonic_Crytek
@@ -56,12 +57,15 @@ namespace HyperLib.Frameworks.Sonic_Crytek
             if (!Directory.Exists(in_path))
                 return;
 
-            foreach (var file in Directory.EnumerateFiles(in_path, "*", SearchOption.AllDirectories))
+            var metadataPath = Path.Combine(in_path, Path.GetFileName(in_path) + ".meta");
+            var metadataList = new List<string>();
+
+            void ImportFile(string in_file)
             {
-                var relativePath = FileSystemHelper.GetRelativeDirectoryName(in_path, file, true);
+                var relativePath = FileSystemHelper.GetRelativeDirectoryName(in_path, in_file, true);
 
                 // TODO: compression and CRC32 hashing.
-                var data = File.ReadAllBytes(file);
+                var data = File.ReadAllBytes(in_file);
                 var node = new ArchiveFile(0, (uint)data.Length, 0, 0, relativePath, data);
 
                 SetSpecialFlags(ref node);
@@ -77,6 +81,49 @@ namespace HyperLib.Frameworks.Sonic_Crytek
 
                 Files.Add(node);
             }
+
+            if (File.Exists(metadataPath))
+            {
+                // Excludes the metadata file.
+                metadataList.Add(metadataPath);
+
+                using (var reader = File.OpenText(metadataPath))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        var relativePath = reader.ReadLine();
+
+                        if (string.IsNullOrEmpty(relativePath))
+                            continue;
+
+                        var filePath = Path.Combine(in_path, FileSystemHelper.ConvertPathToWindows(relativePath));
+
+                        if (File.Exists(filePath))
+                        {
+                            ImportFile(filePath);
+                        }
+                        else
+                        {
+                            Logger.Error($"Importing failed: {relativePath}");
+                            Logger.Warning("Importing files out of order!");
+                        }
+
+                        metadataList.Add(filePath);
+                    }
+                }
+            }
+            else
+            {
+                Logger.Warning("Importing files out of order!");
+            }
+
+            foreach (var file in Directory.EnumerateFiles(in_path, "*", SearchOption.AllDirectories))
+            {
+                if (metadataList.Contains(file))
+                    continue;
+
+                ImportFile(file);
+            }
         }
 
         public override void Export(string in_path = "")
@@ -86,30 +133,42 @@ namespace HyperLib.Frameworks.Sonic_Crytek
 
             var dir = Directory.CreateDirectory(in_path).FullName;
 
-            foreach (var file in Files)
+            // Create metadata file for strict file order.
+            using (var writer = File.CreateText(Path.Combine(dir, Path.GetFileName(in_path) + ".meta")))
             {
-                Logger.Log($"Exporting file: {file.Name}");
+                for (int i = 0; i < Files.Count; i++)
+                {
+                    var file = Files[i];
+
+                    Logger.Log($"Exporting file: {file.Name}");
 
 #if !DEBUG
-                try
+                    try
 #endif
-                {
-                    var filePath = Path.Combine(dir, file.Name);
-                    var dirPath = Path.GetDirectoryName(filePath);
+                    {
+                        if (file.SpecialFlags.ToString().EndsWith("Alt"))
+                        {
+                            file.Name = FileSystemHelper.ConvertPathToUnix(
+                                FileSystemHelper.ChangeFileName(file.Name, $"{Path.GetFileNameWithoutExtension(file.Name)}_alt"));
+                        }
 
-                    Directory.CreateDirectory(dirPath);
+                        var filePath = Path.Combine(dir, file.Name);
+                        var dirPath = Path.GetDirectoryName(filePath);
 
-                    if (File.Exists(filePath) && file.SpecialFlags != ESpecialFlags.None)
-                        filePath = FileSystemHelper.ChangeFileName(filePath, Path.GetFileNameWithoutExtension(filePath) + "_alt");
+                        Directory.CreateDirectory(dirPath);
 
-                    File.WriteAllBytes(filePath, file.Data);
-                }
+                        File.WriteAllBytes(filePath, file.Data);
+                    }
 #if !DEBUG
-                catch (Exception ex)
-                {
-                    Logger.Error($"Exporting failed: {file}\nReason: {ex}");
-                }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Exporting failed: {file}\nReason: {ex}");
+                    }
 #endif
+
+                    // Export file name to metadata.
+                    writer.WriteLine(file.Name);
+                }
             }
         }
 
