@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace HyperLib.Games.TommunismEngine
+namespace HyperLib.Frameworks.TommunismEngine
 {
     public class Registry : FileBase
     {

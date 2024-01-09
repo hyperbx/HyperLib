@@ -1,7 +1,7 @@
 ﻿using HyperLib.Helpers;
 using HyperLib.IO.Extensions;
 
-namespace HyperLib.Games.TommunismEngine
+namespace HyperLib.Frameworks.TommunismEngine
 {
     public class Archive : FileBase
     {

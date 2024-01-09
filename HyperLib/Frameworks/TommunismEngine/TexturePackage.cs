@@ -2,7 +2,7 @@
 using HyperLib.Helpers.Converters;
 using Newtonsoft.Json;
 
-namespace HyperLib.Games.TommunismEngine
+namespace HyperLib.Frameworks.TommunismEngine
 {
     public class TexturePackage : FileBase
     {

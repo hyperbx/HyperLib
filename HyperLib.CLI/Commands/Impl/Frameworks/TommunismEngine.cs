@@ -1,7 +1,7 @@
-﻿using HyperLib.Games.TommunismEngine;
+﻿using HyperLib.Frameworks.TommunismEngine;
 using HyperLib.Helpers;
 
-namespace HyperLib.CLI.Commands.Impl.Games
+namespace HyperLib.CLI.Commands.Impl.Frameworks
 {
     [Command("TommunismEngine", "tom", [typeof(string), typeof(string)], "The game engine developed for Super Meat Boy.",
         "\n\t--TommunismEngine Archive [file|directory] [opt: destination]\n" +
