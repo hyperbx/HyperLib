@@ -9,8 +9,8 @@ namespace HyperLib.Frameworks.TommunismEngine
 
         public bool IsIndexOnly { get; set; } = true;
 
-        public List<DirectoryNode> Directories { get; set; } = [];
-        public List<FileNode> Files { get; set; } = [];
+        public List<ArchiveDirectory> Directories { get; set; } = [];
+        public List<ArchiveFile> Files { get; set; } = [];
 
         public Archive() { }
 
@@ -30,16 +30,16 @@ namespace HyperLib.Frameworks.TommunismEngine
             var reader = new BinaryValueReader(in_stream, StreamOwnership.Retain, Endianness.Little, Encoding.UTF8);
 
             var dirCount = reader.ReadInt32();
-            var dirInfos = new List<DirectoryInfo>();
+            var dirInfos = new List<ArchiveDirectoryInfo>();
 
             for (int i = 0; i < dirCount; i++)
-                dirInfos.Add(reader.Read<DirectoryInfo>());
+                dirInfos.Add(reader.Read<ArchiveDirectoryInfo>());
 
             var fileCount = reader.ReadInt32();
-            var fileInfos = new List<FileInfo>();
+            var fileInfos = new List<ArchiveFileInfo>();
 
             for (int i = 0; i < fileCount; i++)
-                fileInfos.Add(reader.Read<FileInfo>());
+                fileInfos.Add(reader.Read<ArchiveFileInfo>());
 
             var dirStringTableLength = reader.ReadInt32();
             var fileStringTableLength = reader.ReadInt32();
@@ -52,7 +52,7 @@ namespace HyperLib.Frameworks.TommunismEngine
                 if (reader.Position > stringTableOffset + dirStringTableLength)
                     throw new IndexOutOfRangeException("This directory's name is outside the bounds of the string table.");
 
-                Directories.Add(new DirectoryNode(dirInfos[i], reader.ReadString(StringBinaryFormat.NullTerminated)));
+                Directories.Add(new ArchiveDirectory(dirInfos[i], reader.ReadString(StringBinaryFormat.NullTerminated)));
             }
 
             for (int i = 0; i < fileCount; i++)
@@ -60,7 +60,7 @@ namespace HyperLib.Frameworks.TommunismEngine
                 if (reader.Position > stringTableOffset + stringTableLength)
                     throw new IndexOutOfRangeException("This file's name is outside the bounds of the string table.");
 
-                Files.Add(new FileNode(fileInfos[i], reader.ReadString(StringBinaryFormat.NullTerminated)));
+                Files.Add(new ArchiveFile(fileInfos[i], reader.ReadString(StringBinaryFormat.NullTerminated)));
             }
 
             if (IsIndexOnly)
@@ -95,7 +95,7 @@ namespace HyperLib.Frameworks.TommunismEngine
             var fileTableOffset = writer.Position;
 
             // Write padding for later.
-            writer.WriteNullBytes(sizeof(FileInfo) * Files.Count);
+            writer.WriteNullBytes(sizeof(ArchiveFileInfo) * Files.Count);
 
             writer.CreateTempField<int>("dirStringTableLength");
             writer.CreateTempField<int>("fileStringTableLength");
@@ -144,26 +144,26 @@ namespace HyperLib.Frameworks.TommunismEngine
 
             foreach (var dir in Directory.EnumerateDirectories(in_path, "*", SearchOption.AllDirectories))
             {
-                var relativePath = FileSystemHelper.GetDirectoryNameFromRoot(in_path, dir, true);
+                var relativePath = FileSystemHelper.GetRelativeDirectoryName(in_path, dir, true);
 
-                Logger.Log($"Importing directory: {relativePath}", "TommunismEngine.Archive");
+                Logger.Log($"Importing directory: {relativePath}");
 
-                var info = new DirectoryInfo(dirIndex, Directory.EnumerateFiles(dir).Count());
+                var info = new ArchiveDirectoryInfo(dirIndex, Directory.EnumerateFiles(dir).Count());
 
-                Directories.Add(new DirectoryNode(info, relativePath));
+                Directories.Add(new ArchiveDirectory(info, relativePath));
 
                 dirIndex++;
             }
 
             foreach (var file in Directory.EnumerateFiles(in_path, "*", SearchOption.AllDirectories))
             {
-                var relativePath = FileSystemHelper.GetDirectoryNameFromRoot(in_path, file, true);
+                var relativePath = FileSystemHelper.GetRelativeDirectoryName(in_path, file, true);
 
-                Logger.Log($"Importing file: {relativePath}", "TommunismEngine.Archive");
+                Logger.Log($"Importing file: {relativePath}");
 
                 var data = File.ReadAllBytes(file);
-                var info = new FileInfo(0, data.Length, 0);
-                var node = new FileNode(info, relativePath)
+                var info = new ArchiveFileInfo(0, data.Length, 0);
+                var node = new ArchiveFile(info, relativePath)
                 {
                     Data = data
                 };
@@ -175,13 +175,13 @@ namespace HyperLib.Frameworks.TommunismEngine
         public override void Export(string in_path = "")
         {
             if (string.IsNullOrEmpty(in_path))
-                in_path = FileSystemHelper.GetDirectoryWithFileName(Location);
+                in_path = FileSystemHelper.GetDirectoryNameOfFileName(Location);
 
             var dir = Directory.CreateDirectory(in_path).FullName;
 
             foreach (var file in Files)
             {
-                Logger.Log($"Exporting file: {file.Name}", "TommunismEngine.Archive");
+                Logger.Log($"Exporting file: {file.Name}");
 
 #if !DEBUG
                 try
@@ -197,43 +197,43 @@ namespace HyperLib.Frameworks.TommunismEngine
 #if !DEBUG
                 catch (Exception ex)
                 {
-                    Logger.Error($"Exporting failed: {file}\nReason: {ex}", "TommunismEngine.Archive");
+                    Logger.Error($"Exporting failed: {file}\nReason: {ex}");
                 }
 #endif
             }
         }
 
-        public struct DirectoryInfo(int in_index, int in_fileCount)
+        public struct ArchiveDirectoryInfo(int in_index, int in_fileCount)
         {
             public int Index = in_index;
             public int FileCount = in_fileCount;
         }
 
-        public struct FileInfo(int in_dataStart, int in_dataSize, int in_parentIndex)
+        public struct ArchiveFileInfo(int in_dataStart, int in_dataSize, int in_parentIndex)
         {
             public int DataStart = in_dataStart;
             public int DataSize = in_dataSize;
             public int ParentIndex = in_parentIndex;
         }
 
-        public class DirectoryNode(Archive.DirectoryInfo in_info)
+        public class ArchiveDirectory(ArchiveDirectoryInfo in_info)
         {
-            public DirectoryInfo Info { get; set; } = in_info;
+            public ArchiveDirectoryInfo Info { get; set; } = in_info;
             public string Name { get; set; } = string.Empty;
 
-            public DirectoryNode(DirectoryInfo in_info, string in_name) : this(in_info)
+            public ArchiveDirectory(ArchiveDirectoryInfo in_info, string in_name) : this(in_info)
             {
                 Name = in_name;
             }
         }
 
-        public class FileNode(Archive.FileInfo in_info)
+        public class ArchiveFile(ArchiveFileInfo in_info)
         {
-            public FileInfo Info { get; set; } = in_info;
+            public ArchiveFileInfo Info { get; set; } = in_info;
             public string Name { get; set; } = string.Empty;
             public byte[] Data { get; set; }
 
-            public FileNode(FileInfo in_info, string in_name) : this(in_info)
+            public ArchiveFile(ArchiveFileInfo in_info, string in_name) : this(in_info)
             {
                 Name = in_name;
             }

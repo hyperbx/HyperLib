@@ -62,7 +62,7 @@ namespace HyperLib.Frameworks.TommunismEngine
         {
             foreach (var file in Directory.EnumerateFiles(in_path, "*.png"))
             {
-                Logger.Log($"Importing texture: {FileSystemHelper.GetDirectoryNameFromRoot(in_path, file)}", "TommunismEngine.TexturePackage");
+                Logger.Log($"Importing texture: {FileSystemHelper.GetRelativeDirectoryName(in_path, file)}");
 
                 var textureData = File.ReadAllBytes(file);
                 var attributeFile = Path.Combine(Path.GetDirectoryName(file), Path.ChangeExtension(file, ".json"));
@@ -79,12 +79,12 @@ namespace HyperLib.Frameworks.TommunismEngine
         public override void Export(string in_path = "")
         {
             if (string.IsNullOrEmpty(in_path))
-                in_path = FileSystemHelper.GetDirectoryWithFileName(Location);
+                in_path = FileSystemHelper.GetDirectoryNameOfFileName(Location);
 
             var dir = Directory.CreateDirectory(in_path).FullName;
             var count = Textures.Count;
 
-            Logger.Log($"Exporting {count} {StringHelper.Pluralise("texture", count)}: {Path.GetFileName(Location)}", "TommunismEngine.TexturePackage");
+            Logger.Log($"Exporting {count} {StringHelper.Pluralise("texture", count)}: {Path.GetFileName(Location)}");
 
             for (int i = 0; i < count; i++)
             {

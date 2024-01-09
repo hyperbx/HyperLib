@@ -3,7 +3,7 @@ using HyperLib.Helpers;
 
 namespace HyperLib.CLI.Commands.Impl.Frameworks
 {
-    [Command("TommunismEngine", "tom", [typeof(string), typeof(string)], "The game engine developed for Super Meat Boy.",
+    [Command("TommunismEngine", "tom", [typeof(string), typeof(string)], "Super Meat Boy",
         "\n\t--TommunismEngine Archive [file|directory] [opt: destination]\n" +
         "\t--TommunismEngine Registry [file] [opt: destination]\n" +
         "\t--TommunismEngine TexturePackage [file|directory] [opt: destination]")]
@@ -22,7 +22,7 @@ namespace HyperLib.CLI.Commands.Impl.Frameworks
                 case "Archive":
                 case "dat":
                 {
-                    if (FileSystemHelper.GetFileSystemItemType(inputPath) == FileSystemHelper.EFileSystemItemType.File)
+                    if (FileSystemHelper.GetBasicType(inputPath) == FileSystemHelper.EFileSystemBasicType.File)
                     {
                         new Archive(inputPath, false).Export(outputPath);
                     }
@@ -58,7 +58,7 @@ namespace HyperLib.CLI.Commands.Impl.Frameworks
                 case "TexturePackage":
                 case "tp":
                 {
-                    if (FileSystemHelper.GetFileSystemItemType(inputPath) == FileSystemHelper.EFileSystemItemType.File)
+                    if (FileSystemHelper.GetBasicType(inputPath) == FileSystemHelper.EFileSystemBasicType.File)
                     {
                         new TexturePackage(inputPath).Export(outputPath);
                     }

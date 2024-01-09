@@ -2,12 +2,12 @@
 {
     public class FileSystemHelper
     {
-        public static string GetDirectoryWithFileName(string in_filePath)
+        public static string GetDirectoryNameOfFileName(string in_filePath)
         {
-            return Path.Combine(Path.GetDirectoryName(in_filePath), Path.GetFileNameWithoutExtension(in_filePath));
+            return Path.Combine(Path.GetDirectoryName(in_filePath), TruncateAllExtensions(in_filePath, true));
         }
 
-        public static string GetDirectoryNameFromRoot(string in_rootDir, string in_path, bool in_isConvertToUnixSeparators = false)
+        public static string GetRelativeDirectoryName(string in_rootDir, string in_path, bool in_isConvertToUnixSeparators = false)
         {
             var relativePath = in_path[in_rootDir.Length..].TrimStart(Path.DirectorySeparatorChar);
 
@@ -17,20 +17,35 @@
             return relativePath;
         }
 
-        public static string TruncateLastExtension(string in_filePath)
+        public static string TruncateAllExtensions(string in_filePath, bool in_isFileNameOnly = false)
         {
-            return Path.Combine(Path.GetDirectoryName(in_filePath), Path.GetFileNameWithoutExtension(in_filePath));
+            var name = Path.GetFileName(in_filePath).Split('.', StringSplitOptions.RemoveEmptyEntries)[0];
+
+            if (in_isFileNameOnly)
+                return name;
+
+            return Path.Combine(Path.GetDirectoryName(in_filePath), name);
         }
 
-        public static EFileSystemItemType GetFileSystemItemType(string in_path)
+        public static string TruncateLastExtension(string in_filePath, bool in_isFileNameOnly = false)
+        {
+            var name = Path.GetFileNameWithoutExtension(in_filePath);
+
+            if (in_isFileNameOnly)
+                return name;
+
+            return Path.Combine(Path.GetDirectoryName(in_filePath), name);
+        }
+
+        public static EFileSystemBasicType GetBasicType(string in_path)
         {
             if (Directory.Exists(in_path))
-                return EFileSystemItemType.Directory;
+                return EFileSystemBasicType.Directory;
 
-            return EFileSystemItemType.File;
+            return EFileSystemBasicType.File;
         }
 
-        public enum EFileSystemItemType
+        public enum EFileSystemBasicType
         {
             File,
             Directory

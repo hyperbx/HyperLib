@@ -1,6 +1,4 @@
-﻿using Amicitia.IO.Binary;
-
-namespace HyperLib.IO.Extensions
+﻿namespace HyperLib.IO.Extensions
 {
     public static class WriterExtensions
     {

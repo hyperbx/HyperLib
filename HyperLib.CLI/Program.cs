@@ -1,18 +1,9 @@
 ﻿using HyperLib.CLI.Commands;
 
-namespace HyperLib.CLI
+if (args.Length <= 0)
 {
-    internal class Program
-    {
-        static void Main(string[] in_args)
-        {
-            if (in_args.Length <= 0)
-            {
-                CommandProcessor.ShowHelp();
-                return;
-            }
-
-            CommandProcessor.ExecuteArguments(CommandProcessor.ParseArguments(in_args));
-        }
-    }
+    CommandProcessor.ShowHelp();
+    return;
 }
+
+CommandProcessor.ExecuteArguments(CommandProcessor.ParseArguments(args));

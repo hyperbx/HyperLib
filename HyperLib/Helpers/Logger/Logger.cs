@@ -27,9 +27,19 @@ namespace HyperLib.Helpers
             Log(in_message, ELogLevel.None, in_caller);
         }
 
+        public static void Log(string in_message)
+        {
+            Log(in_message, string.Empty);
+        }
+
         public static void Utility(string in_message, [CallerMemberName] string in_caller = null)
         {
             Log(in_message, ELogLevel.Utility, in_caller);
+        }
+
+        public static void Utility(string in_message)
+        {
+            Utility(in_message, string.Empty);
         }
 
         public static void Warning(string in_message, [CallerMemberName] string in_caller = null)
@@ -37,9 +47,19 @@ namespace HyperLib.Helpers
             Log(in_message, ELogLevel.Warning, in_caller);
         }
 
+        public static void Warning(string in_message)
+        {
+            Warning(in_message, string.Empty);
+        }
+
         public static void Error(string in_message, [CallerMemberName] string in_caller = null)
         {
             Log(in_message, ELogLevel.Error, in_caller);
+        }
+
+        public static void Error(string in_message)
+        {
+            Error(in_message, string.Empty);
         }
     }
 }

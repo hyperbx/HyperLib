@@ -1,6 +1,4 @@
-﻿using Amicitia.IO.Binary;
-
-namespace HyperLib.IO.Extensions
+﻿namespace HyperLib.IO.Extensions
 {
     public static class ReaderExtensions
     {
@@ -12,7 +10,7 @@ namespace HyperLib.IO.Extensions
                 return true;
 
             if (in_isExceptionOnInvalid)
-                throw new BadImageFormatException($"Signature mismatch. Expected: {in_expected}. Received: {sig}");
+                throw new BadImageFormatException($"Signature mismatch (expected: 0x{in_expected:X}, received: 0x{sig:X})");
 
             return false;
         }
