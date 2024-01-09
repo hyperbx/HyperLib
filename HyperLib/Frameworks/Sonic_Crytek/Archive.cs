@@ -60,11 +60,20 @@ namespace HyperLib.Frameworks.Sonic_Crytek
             {
                 var relativePath = FileSystemHelper.GetRelativeDirectoryName(in_path, file, true);
 
-                Logger.Log($"Importing file: {relativePath}");
-
                 // TODO: compression and CRC32 hashing.
                 var data = File.ReadAllBytes(file);
                 var node = new ArchiveFile(0, (uint)data.Length, 0, 0, relativePath, data);
+
+                SetSpecialFlags(ref node);
+
+                if (node.SpecialFlags == ESpecialFlags.None)
+                {
+                    Logger.Log($"Importing file: {relativePath}");
+                }
+                else
+                {
+                    Logger.Utility($"Importing special file: {relativePath} (flags: {node.SpecialFlags})");
+                }
 
                 Files.Add(node);
             }
@@ -90,6 +99,9 @@ namespace HyperLib.Frameworks.Sonic_Crytek
 
                     Directory.CreateDirectory(dirPath);
 
+                    if (File.Exists(filePath) && file.SpecialFlags != ESpecialFlags.None)
+                        filePath = FileSystemHelper.ChangeFileName(filePath, Path.GetFileNameWithoutExtension(filePath) + "_alt");
+
                     File.WriteAllBytes(filePath, file.Data);
                 }
 #if !DEBUG
@@ -99,6 +111,51 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                 }
 #endif
             }
+        }
+
+        public static void SetSpecialFlags(ref ArchiveFile in_file)
+        {
+            if (!in_file.Name.Contains("characters") || !(Path.GetExtension(in_file.Name) is ".dds" or ".mtl"))
+                return;
+
+            var fileName = Path.GetFileNameWithoutExtension(in_file.Name);
+            bool isAlt = fileName.EndsWith("_alt");
+
+            if (fileName.StartsWith("sonic"))
+            {
+                in_file.SpecialFlags = isAlt
+                    ? ESpecialFlags.SonicAlt
+                    : ESpecialFlags.Sonic;
+            }
+            else if (fileName.StartsWith("tails"))
+            {
+                in_file.SpecialFlags = isAlt
+                    ? ESpecialFlags.TailsAlt
+                    : ESpecialFlags.Tails;
+            }
+            else if (fileName.StartsWith("amy"))
+            {
+                in_file.SpecialFlags = isAlt
+                    ? ESpecialFlags.AmyAlt
+                    : ESpecialFlags.Amy;
+            }
+            else if (fileName.StartsWith("knuckles"))
+            {
+                in_file.SpecialFlags = isAlt
+                    ? ESpecialFlags.KnucklesAlt
+                    : ESpecialFlags.Knuckles;
+            }
+            else
+            {
+                in_file.SpecialFlags = ESpecialFlags.None;
+            }
+
+            if (!isAlt)
+                return;
+
+            // Remove "_alt" suffix.
+            in_file.Name = FileSystemHelper.ConvertPathToUnix(
+                FileSystemHelper.ChangeFileName(in_file.Name, fileName.Remove(fileName.Length - 4)));
         }
 
         // LZSS compression research by NeKit, original decompression code by Paraxade.
@@ -168,12 +225,13 @@ namespace HyperLib.Frameworks.Sonic_Crytek
 
         ///////////////////////////////////////////////////////////////////////////////////
 
-        public struct ArchiveFile(uint in_compressedSize, uint in_uncompressedSize, uint in_hash, uint in_flags, string in_name, byte[] in_data) : IBinarySerializable
+        public struct ArchiveFile(uint in_compressedSize, uint in_uncompressedSize, uint in_hash, ESpecialFlags in_specialFlags, string in_name, byte[] in_data) : IBinarySerializable
         {
             public uint CompressedSize = in_compressedSize;
             public uint UncompressedSize = in_uncompressedSize;
             public uint Hash = in_hash;
-            public uint Flags = in_flags;
+            public ushort UnkField1;
+            public ESpecialFlags SpecialFlags = in_specialFlags;
             public string Name = in_name;
             public byte[] Data = in_data;
 
@@ -182,7 +240,8 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                 CompressedSize = in_reader.ReadUInt32();
                 UncompressedSize = in_reader.ReadUInt32();
                 Hash = in_reader.ReadUInt32();
-                Flags = in_reader.ReadUInt32();
+                UnkField1 = in_reader.ReadUInt16();
+                SpecialFlags = (ESpecialFlags)in_reader.ReadUInt16();
                 Name = in_reader.ReadString(StringBinaryFormat.NullTerminated);
             }
 
@@ -191,7 +250,8 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                 in_writer.Write(CompressedSize);
                 in_writer.Write(UncompressedSize);
                 in_writer.Write(Hash);
-                in_writer.Write(Flags);
+                in_writer.Write(UnkField1);
+                in_writer.Write(SpecialFlags);
                 in_writer.WriteStringNullTerminated(Encoding.UTF8, Name);
                 in_writer.WriteArray(Data);
             }
@@ -222,6 +282,20 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                     Data = in_reader.ReadArray<byte>((int)UncompressedSize);
                 }
             }
+        }
+
+        // Flag research by ik-01.
+        public enum ESpecialFlags : ushort
+        {
+            KnucklesAlt = 0xFFFC,
+            AmyAlt = 0xFFFD,
+            TailsAlt = 0xFFFE,
+            SonicAlt = 0xFFFF,
+            None = 0,
+            Sonic = 1,
+            Tails = 2,
+            Amy = 3,
+            Knuckles = 4
         }
     }
 }

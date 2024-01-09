@@ -2,6 +2,19 @@
 {
     public class FileSystemHelper
     {
+        public static string ConvertPathToUnix(string in_path)
+        {
+            return in_path.Replace('\\', '/');
+        }
+
+        public static string ChangeFileName(string in_filePath, string in_newFileName, bool in_isOriginalExtensions = true)
+        {
+            if (in_isOriginalExtensions)
+                in_newFileName += '.' + string.Join('.', GetAllExtensions(in_filePath));
+
+            return Path.Combine(Path.GetDirectoryName(in_filePath), in_newFileName);
+        }
+
         public static string GetDirectoryNameOfFileName(string in_filePath)
         {
             return Path.Combine(Path.GetDirectoryName(in_filePath), TruncateAllExtensions(in_filePath, true));
@@ -15,6 +28,11 @@
                 relativePath = relativePath.Replace('\\', '/');
 
             return relativePath;
+        }
+
+        public static List<string> GetAllExtensions(string in_filePath)
+        {
+            return Path.GetFileName(in_filePath).Split('.', StringSplitOptions.RemoveEmptyEntries).Skip(1).ToList();
         }
 
         public static string TruncateAllExtensions(string in_filePath, bool in_isFileNameOnly = false)

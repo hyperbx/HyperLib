@@ -10,7 +10,7 @@ A work-in-progress general purpose library for software research.
 ### Supported formats
 Type|Support|[Platforms](## "This column indicates platforms the library has been tested and confirmed working with.")|[1:1](## "Can this library generate a binary identical file from the original source?")|Description
 ----|-------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|-----------
-[Archive (*.\*.stream)](https://github.com/hyperbx/HyperLib/blob/main/HyperLib/Frameworks/Sonic_Crytek/Archive.cs)|[📜](## "Read") [💾](## "Write") [📥](## "Import") [📤](## "Export")|Wii U|[❌](## "Files are always written uncompressed and are missing CRC32 hashes, but the resulting archive is read correctly by the game.")|An LZSS-compressed archive format.
+[Archive (*.\*.stream)](https://github.com/hyperbx/HyperLib/blob/main/HyperLib/Frameworks/Sonic_Crytek/Archive.cs)|[📜](## "Read") [💾](## "Write") [📥](## "Import") [📤](## "Export")|Wii U|[❌](## "Files are always written uncompressed and are missing CRC32 hashes and some unknown flags, but the resulting archive is read correctly by the game.")|An LZSS-compressed archive format.
 
 ## TommunismEngine
 ### Known for
