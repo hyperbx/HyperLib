@@ -2,7 +2,7 @@
 using HyperLib.Helpers.Converters;
 using Newtonsoft.Json;
 
-namespace HyperLib.Frameworks.TommunismEngine
+namespace HyperLib.Formats.TommunismEngine
 {
     public class TexturePackage : FileBase
     {
@@ -22,13 +22,13 @@ namespace HyperLib.Frameworks.TommunismEngine
 
             for (int i = 0; i < textureCount; i++)
             {
-                var dataStart = reader.ReadInt32();
+                var dataOffset = reader.ReadInt32();
                 var dataSize = reader.ReadInt32();
                 var attributes = reader.ReadArray<byte>(9);
 
                 var pos = reader.Position;
 
-                reader.Seek(dataStart, SeekOrigin.Begin);
+                reader.Seek(dataOffset, SeekOrigin.Begin);
 
                 Textures.Add(new Texture(reader.ReadArray<byte>(dataSize), attributes));
 
@@ -44,7 +44,7 @@ namespace HyperLib.Frameworks.TommunismEngine
 
             for (int i = 0; i < Textures.Count; i++)
             {
-                writer.CreateTempField<int>($"dataStart{i}");
+                writer.CreateTempField<int>($"dataOffset{i}");
                 writer.Write(Textures[i].Data.Length);
                 writer.WriteArray(Textures[i].Attributes);
             }
@@ -54,7 +54,7 @@ namespace HyperLib.Frameworks.TommunismEngine
                 var pos = writer.Position;
 
                 writer.WriteArray(Textures[i].Data);
-                writer.WriteTempField($"dataStart{i}", (int)pos);
+                writer.WriteTempField($"dataOffset{i}", (int)pos);
             }
         }
 

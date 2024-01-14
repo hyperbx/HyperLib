@@ -1,20 +1,20 @@
 ﻿using HyperLib.Helpers;
 using HyperLib.IO.Extensions;
 
-namespace HyperLib.Frameworks.TommunismEngine
+namespace HyperLib.Formats.TommunismEngine
 {
     public class Archive : FileBase
     {
         public override string Extension => ".dat";
 
-        public bool IsIndexOnly { get; set; } = true;
+        public bool IsIndexOnly { get; set; } = false;
 
         public List<ArchiveDirectory> Directories { get; set; } = [];
         public List<ArchiveFile> Files { get; set; } = [];
 
         public Archive() { }
 
-        public Archive(string in_path, bool in_isIndexOnly = true)
+        public Archive(string in_path, bool in_isIndexOnly = false)
         {
             Read(in_path, in_isIndexOnly);
         }
@@ -120,7 +120,7 @@ namespace HyperLib.Frameworks.TommunismEngine
             foreach (var file in Files)
             {
                 var info = file.Info;
-                info.DataStart = (int)writer.Position;
+                info.DataOffset = (int)writer.Position;
                 file.Info = info;
 
                 writer.WriteArray(file.Data);
@@ -209,9 +209,9 @@ namespace HyperLib.Frameworks.TommunismEngine
             public int FileCount = in_fileCount;
         }
 
-        public struct ArchiveFileInfo(int in_dataStart, int in_dataSize, int in_parentIndex)
+        public struct ArchiveFileInfo(int in_dataOffset, int in_dataSize, int in_parentIndex)
         {
-            public int DataStart = in_dataStart;
+            public int DataOffset = in_dataOffset;
             public int DataSize = in_dataSize;
             public int ParentIndex = in_parentIndex;
         }
@@ -242,7 +242,7 @@ namespace HyperLib.Frameworks.TommunismEngine
             {
                 var pos = in_reader.Position;
 
-                in_reader.Seek(Info.DataStart, SeekOrigin.Begin);
+                in_reader.Seek(Info.DataOffset, SeekOrigin.Begin);
 
                 var data = in_reader.ReadArray<byte>(Info.DataSize);
 

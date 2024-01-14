@@ -1,7 +1,6 @@
-﻿using HyperLib.Frameworks.Sonic_Crytek;
-using HyperLib.Helpers;
+﻿using HyperLib.Formats.Sonic_Crytek;
 
-namespace HyperLib.CLI.Commands.Impl.Frameworks
+namespace HyperLib.CLI.Commands.Impl.Formats
 {
     [Command("Sonic_Crytek", "rol", [typeof(string), typeof(string)], "Sonic Boom: Rise of Lyric", "\n\t--Sonic_Crytek Archive [file|directory] [opt: destination]")]
     public class Sonic_Crytek : ICommand
@@ -18,20 +17,8 @@ namespace HyperLib.CLI.Commands.Impl.Frameworks
             {
                 case "Archive":
                 case "stream":
-                {
-                    if (FileSystemHelper.GetBasicType(inputPath) == FileSystemHelper.EFileSystemBasicType.File)
-                    {
-                        new Archive(inputPath, false).Export(outputPath);
-                    }
-                    else
-                    {
-                        var dat = new Archive();
-                        dat.Import(inputPath);
-                        dat.Write(outputPath ?? inputPath + dat.Extension);
-                    }
-
+                    CommandHelper.HandleArchiveType<Archive>(inputPath, outputPath);
                     break;
-                }
             }
         }
     }

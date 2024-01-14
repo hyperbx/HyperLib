@@ -1,20 +1,19 @@
 ﻿using HyperLib.Helpers;
-using HyperLib.IO;
 using HyperLib.IO.Extensions;
 
-namespace HyperLib.Frameworks.Sonic_Crytek
+namespace HyperLib.Formats.Sonic_Crytek
 {
     public class Archive : FileBase
     {
         public override string Extension => ".wiiu.stream"; // *.*.stream
 
-        public bool IsIndexOnly { get; set; } = true;
+        public bool IsIndexOnly { get; set; } = false;
 
         public List<ArchiveFile> Files { get; set; } = [];
 
         public Archive() { }
 
-        public Archive(string in_path, bool in_isIndexOnly = true)
+        public Archive(string in_path, bool in_isIndexOnly = false)
         {
             Read(in_path, in_isIndexOnly);
         }
@@ -29,13 +28,13 @@ namespace HyperLib.Frameworks.Sonic_Crytek
         {
             var reader = new BinaryObjectReader(in_stream, StreamOwnership.Retain, Endianness.Big, Encoding.UTF8);
 
-            if (!reader.IsSignatureValid(0x7374726D)) // strm
+            if (!reader.IsSignatureValid(0x7374726D)) // "strm"
                 return;
 
             while (reader.Position != reader.Length)
             {
                 var file = reader.ReadObject<ArchiveFile>();
-                
+
                 file.ReadData(reader, IsIndexOnly);
 
                 Files.Add(file);
@@ -46,7 +45,7 @@ namespace HyperLib.Frameworks.Sonic_Crytek
         {
             var writer = new BinaryObjectWriter(in_stream, StreamOwnership.Retain, Endianness.Big, Encoding.UTF8);
 
-            writer.Write(0x7374726D); // strm
+            writer.Write(0x7374726D); // "strm"
 
             foreach (var file in Files)
                 writer.WriteObject(file);
@@ -68,15 +67,15 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                 var data = File.ReadAllBytes(in_file);
                 var node = new ArchiveFile(0, (uint)data.Length, 0, 0, relativePath, data);
 
-                SetSpecialFlags(ref node);
+                node.SetAttributes();
 
-                if (node.SpecialFlags == ESpecialFlags.None)
+                if (node.Attributes == EAttribute.None)
                 {
                     Logger.Log($"Importing file: {relativePath}");
                 }
                 else
                 {
-                    Logger.Utility($"Importing special file: {relativePath} (flags: {node.SpecialFlags})");
+                    Logger.Utility($"Importing file: {relativePath} (attributes: {node.Attributes})");
                 }
 
                 Files.Add(node);
@@ -146,7 +145,7 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                     try
 #endif
                     {
-                        if (file.SpecialFlags.ToString().EndsWith("Alt"))
+                        if (file.Attributes.ToString().EndsWith("Alt"))
                         {
                             file.Name = FileSystemHelper.ConvertPathToUnix(
                                 FileSystemHelper.ChangeFileName(file.Name, $"{Path.GetFileNameWithoutExtension(file.Name)}_alt"));
@@ -172,125 +171,13 @@ namespace HyperLib.Frameworks.Sonic_Crytek
             }
         }
 
-        public static void SetSpecialFlags(ref ArchiveFile in_file)
-        {
-            if (!in_file.Name.Contains("characters") || !(Path.GetExtension(in_file.Name) is ".dds" or ".mtl"))
-                return;
-
-            var fileName = Path.GetFileNameWithoutExtension(in_file.Name);
-            bool isAlt = fileName.EndsWith("_alt");
-
-            if (fileName.StartsWith("sonic"))
-            {
-                in_file.SpecialFlags = isAlt
-                    ? ESpecialFlags.SonicAlt
-                    : ESpecialFlags.Sonic;
-            }
-            else if (fileName.StartsWith("tails"))
-            {
-                in_file.SpecialFlags = isAlt
-                    ? ESpecialFlags.TailsAlt
-                    : ESpecialFlags.Tails;
-            }
-            else if (fileName.StartsWith("amy"))
-            {
-                in_file.SpecialFlags = isAlt
-                    ? ESpecialFlags.AmyAlt
-                    : ESpecialFlags.Amy;
-            }
-            else if (fileName.StartsWith("knuckles"))
-            {
-                in_file.SpecialFlags = isAlt
-                    ? ESpecialFlags.KnucklesAlt
-                    : ESpecialFlags.Knuckles;
-            }
-            else
-            {
-                in_file.SpecialFlags = ESpecialFlags.None;
-            }
-
-            if (!isAlt)
-                return;
-
-            // Remove "_alt" suffix.
-            in_file.Name = FileSystemHelper.ConvertPathToUnix(
-                FileSystemHelper.ChangeFileName(in_file.Name, fileName.Remove(fileName.Length - 4)));
-        }
-
-        // LZSS compression research by NeKit, original decompression code by Paraxade.
-        /*
-            References;
-                - https://forums.sonicretro.org/index.php?posts/810905
-                - https://forums.sonicretro.org/index.php?posts/811201
-        */
-        ///////////////////////////////////////////////////////////////////////////////////
-
-        public static unsafe bool Decompress(byte[] in_compressedData, uint in_compressedSize, ref byte[] in_uncompressedData, uint in_uncompressedSize)
-        {
-            static unsafe uint ReadSize(ref byte* in_src, bool in_isSeek)
-            {
-                var b = *in_src++;
-
-                var size = in_isSeek
-                    ? (uint)(b & 0x7F)
-                    : (uint)(b & 0x3F);
-
-                while ((b & 0x80) != 0)
-                {
-                    b = *in_src++;
-                    size = (size << 7) | (uint)(b & 0x7F);
-                }
-
-                return size;
-            }
-
-            fixed (byte* p_compressedData = in_compressedData)
-            fixed (byte* p_uncompressedData = in_uncompressedData)
-            {
-                byte* srcIndex = p_compressedData;
-                byte* dstIndex = p_uncompressedData;
-
-                while ((srcIndex - p_compressedData < in_compressedSize) && (dstIndex - p_uncompressedData < in_uncompressedSize))
-                {
-                    var b = *srcIndex;
-                    var size = ReadSize(ref srcIndex, false);
-
-                    if ((b & 0x40) != 0)
-                    {
-                        size += 3;
-
-                        var seekSize = ReadSize(ref srcIndex, true);
-                        var seekStart = dstIndex - seekSize;
-                        var seekEnd = dstIndex;
-
-                        for (var i = 0; i < size; i++)
-                        {
-                            *dstIndex++ = *seekStart++;
-
-                            if (seekStart >= seekEnd)
-                                seekStart -= seekSize;
-                        }
-                    }
-                    else
-                    {
-                        for (uint i = 0; i < size; i++)
-                            *dstIndex++ = *srcIndex++;
-                    }
-                }
-
-                return (srcIndex - p_compressedData == in_compressedSize) && (dstIndex - p_uncompressedData == in_uncompressedSize);
-            }
-        }
-
-        ///////////////////////////////////////////////////////////////////////////////////
-
-        public struct ArchiveFile(uint in_compressedSize, uint in_uncompressedSize, uint in_hash, ESpecialFlags in_specialFlags, string in_name, byte[] in_data) : IBinarySerializable
+        public struct ArchiveFile(uint in_compressedSize, uint in_uncompressedSize, uint in_hash, EAttribute in_specialFlags, string in_name, byte[] in_data) : IBinarySerializable
         {
             public uint CompressedSize = in_compressedSize;
             public uint UncompressedSize = in_uncompressedSize;
             public uint Hash = in_hash;
-            public ushort UnkField1;
-            public ESpecialFlags SpecialFlags = in_specialFlags;
+            public short UnkField1;
+            public EAttribute Attributes = in_specialFlags;
             public string Name = in_name;
             public byte[] Data = in_data;
 
@@ -299,8 +186,8 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                 CompressedSize = in_reader.ReadUInt32();
                 UncompressedSize = in_reader.ReadUInt32();
                 Hash = in_reader.ReadUInt32();
-                UnkField1 = in_reader.ReadUInt16();
-                SpecialFlags = (ESpecialFlags)in_reader.ReadUInt16();
+                UnkField1 = in_reader.ReadInt16();
+                Attributes = (EAttribute)in_reader.ReadInt16();
                 Name = in_reader.ReadString(StringBinaryFormat.NullTerminated);
             }
 
@@ -310,11 +197,11 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                 in_writer.Write(UncompressedSize);
                 in_writer.Write(Hash);
                 in_writer.Write(UnkField1);
-                in_writer.Write(SpecialFlags);
+                in_writer.Write(Attributes);
                 in_writer.WriteStringNullTerminated(Encoding.UTF8, Name);
                 in_writer.WriteArray(Data);
             }
-
+            
             public void ReadData(BinaryObjectReader in_reader, bool in_isIndexOnly = true)
             {
                 if (in_isIndexOnly)
@@ -341,20 +228,132 @@ namespace HyperLib.Frameworks.Sonic_Crytek
                     Data = in_reader.ReadArray<byte>((int)UncompressedSize);
                 }
             }
+
+            public void SetAttributes()
+            {
+                if (!Name.Contains("characters") || !(Path.GetExtension(Name) is ".dds" or ".mtl"))
+                    return;
+
+                var fileName = Path.GetFileNameWithoutExtension(Name);
+                bool isAlt = fileName.EndsWith("_alt");
+
+                if (fileName.StartsWith("sonic"))
+                {
+                    Attributes = isAlt
+                        ? EAttribute.SonicAlt
+                        : EAttribute.Sonic;
+                }
+                else if (fileName.StartsWith("tails"))
+                {
+                    Attributes = isAlt
+                        ? EAttribute.TailsAlt
+                        : EAttribute.Tails;
+                }
+                else if (fileName.StartsWith("amy"))
+                {
+                    Attributes = isAlt
+                        ? EAttribute.AmyAlt
+                        : EAttribute.Amy;
+                }
+                else if (fileName.StartsWith("knuckles"))
+                {
+                    Attributes = isAlt
+                        ? EAttribute.KnucklesAlt
+                        : EAttribute.Knuckles;
+                }
+                else
+                {
+                    Attributes = EAttribute.None;
+                }
+
+                if (!isAlt)
+                    return;
+
+                // Remove "_alt" suffix.
+                Name = FileSystemHelper.ConvertPathToUnix(
+                    FileSystemHelper.ChangeFileName(Name, fileName.Remove(fileName.Length - 4)));
+            }
+
+            // LZSS compression research by NeKit, original decompression code by Paraxade.
+            /*
+                References;
+                    - https://forums.sonicretro.org/index.php?posts/810905
+                    - https://forums.sonicretro.org/index.php?posts/811201
+            */
+            ///////////////////////////////////////////////////////////////////////////////////
+
+            public static unsafe bool Decompress(byte[] in_compressedData, uint in_compressedSize, ref byte[] in_uncompressedData, uint in_uncompressedSize)
+            {
+                static unsafe uint ReadSize(ref byte* in_src, bool in_isSeek)
+                {
+                    var b = *in_src++;
+
+                    var size = in_isSeek
+                        ? (uint)(b & 0x7F)
+                        : (uint)(b & 0x3F);
+
+                    while ((b & 0x80) != 0)
+                    {
+                        b = *in_src++;
+                        size = size << 7 | (uint)(b & 0x7F);
+                    }
+
+                    return size;
+                }
+
+                fixed (byte* p_compressedData = in_compressedData)
+                fixed (byte* p_uncompressedData = in_uncompressedData)
+                {
+                    byte* srcIndex = p_compressedData;
+                    byte* dstIndex = p_uncompressedData;
+
+                    while (srcIndex - p_compressedData < in_compressedSize && dstIndex - p_uncompressedData < in_uncompressedSize)
+                    {
+                        var b = *srcIndex;
+                        var size = ReadSize(ref srcIndex, false);
+
+                        if ((b & 0x40) != 0)
+                        {
+                            size += 3;
+
+                            var seekSize = ReadSize(ref srcIndex, true);
+                            var seekStart = dstIndex - seekSize;
+                            var seekEnd = dstIndex;
+
+                            for (var i = 0; i < size; i++)
+                            {
+                                *dstIndex++ = *seekStart++;
+
+                                if (seekStart >= seekEnd)
+                                    seekStart -= seekSize;
+                            }
+                        }
+                        else
+                        {
+                            for (uint i = 0; i < size; i++)
+                                *dstIndex++ = *srcIndex++;
+                        }
+                    }
+
+                    return srcIndex - p_compressedData == in_compressedSize && dstIndex - p_uncompressedData == in_uncompressedSize;
+                }
+            }
+
+            ///////////////////////////////////////////////////////////////////////////////////
         }
 
-        // Flag research by ik-01.
-        public enum ESpecialFlags : ushort
+        // Attribute research by ik-01.
+        public enum EAttribute : short
         {
-            KnucklesAlt = 0xFFFC,
-            AmyAlt = 0xFFFD,
-            TailsAlt = 0xFFFE,
-            SonicAlt = 0xFFFF,
-            None = 0,
-            Sonic = 1,
-            Tails = 2,
-            Amy = 3,
-            Knuckles = 4
+            Knuckles = -4,
+            Amy,
+            Tails,
+            Sonic,
+            None,
+            SonicAlt,
+            TailsAlt,
+            AmyAlt,
+            KnucklesAlt
         }
     }
 }

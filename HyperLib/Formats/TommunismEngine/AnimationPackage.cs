@@ -1,4 +1,4 @@
-﻿namespace HyperLib.Frameworks.TommunismEngine
+﻿namespace HyperLib.Formats.TommunismEngine
 {
     public class AnimationPackage : FileBase
     {
@@ -33,8 +33,8 @@
         public enum FormatVersion : int
         {
             Unknown = -1,
-            F100    = 0x46313030,
-            F101    = 0x46313031
+            F100 = 0x46313030,
+            F101 = 0x46313031
         }
     }
 }
