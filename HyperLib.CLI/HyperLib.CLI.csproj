@@ -10,6 +10,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <IncludeAllContentForSelfExtract>True</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,19 +1,25 @@
 ﻿using HyperLib.Helpers;
+using HyperLib.IO.Compression;
+using HyperLib.IO.Crypto;
 using HyperLib.IO.Extensions;
+using System.IO.Compression;
 
 namespace HyperLib.Formats.Barracuda
 {
     public class Archive : FileBase
     {
-        private const uint _pcSignature = 0x46505556;   // FPUV
-        private const uint _xboxSignature = 0x414B5046; // AKPF
-
+        private const uint _pcSignature = 0x46505556; // "FPUV"
         private const uint _pcVersion = 3;
+        private const uint _xboxSignature = 0x414B5046; // "AKPF"
         private const uint _xboxVersion = 5;
 
         public override string Extension => ".apf";
 
         public bool IsPCVersion { get; set; } = false;
+
+        /* TODO: figure out why compressed files just stop the game from launching,
+                 despite using the correct compression algorithm. */
+        public CompressionLevel CompressionLevel => CompressionLevel.NoCompression;
 
         public List<ArchiveFile> Files { get; set; } = [];
 
@@ -36,14 +42,14 @@ namespace HyperLib.Formats.Barracuda
                 }
                 else
                 {
-                    throw new NotSupportedException("Could not identify Vector Unit archive type.");
+                    throw new NotSupportedException("Could not identify archive type.");
                 }
             }
 
             var version = reader.ReadUInt32();
 
             if (version != (IsPCVersion ? _pcVersion : _xboxVersion))
-                throw new NotSupportedException($"Unsupported package file version.");
+                throw new NotSupportedException($"Unsupported archive version.");
 
             var fileTableOffset = reader.ReadUInt32();
             var fileCount = reader.ReadUInt32();
@@ -104,25 +110,31 @@ namespace HyperLib.Formats.Barracuda
 
             foreach (var file in Directory.EnumerateFiles(in_path, "*", SearchOption.AllDirectories))
             {
-                var relativePath = FileSystemHelper.GetRelativeDirectoryName(in_path, file, true);
+                var relativePath = FileSystemHelper.GetRelativeDirectoryName(in_path, FileSystemHelper.TruncateAllExtensions(file), true);
+
+                Logger.Log($"Importing file: {relativePath}");
 
                 var data = File.ReadAllBytes(file);
                 var uncompressedSize = (uint)data.Length;
                 var crc32 = CRC32.Compute(data);
 
-                if (IsPCVersion)
+                if (CompressionLevel != CompressionLevel.NoCompression)
                 {
-                    data = ZLibStreamExtensions.Compress(data);
-                }
-                else
-                {
-                    // TODO: XCompression.
+                    if (IsPCVersion)
+                    {
+                        data = ZLib.Compress(data, CompressionLevel);
+                    }
+                    else
+                    {
+                        data = XCompress.Compress(data);
+                    }
                 }
 
-                var compressedSize = (uint)data.Length;
-                var node = new ArchiveFile(relativePath, uncompressedSize, compressedSize, crc32, data);
+                var compressedSize = CompressionLevel == CompressionLevel.NoCompression
+                    ? 0
+                    : (uint)data.Length;
 
-                Logger.Log($"Importing file: {relativePath}");
+                var node = new ArchiveFile(relativePath, uncompressedSize, compressedSize, ArchiveFile.GetTypeFromName(file), crc32, data);
 
                 Files.Add(node);
             }
@@ -130,9 +142,6 @@ namespace HyperLib.Formats.Barracuda
 
         public override void Export(string in_path = "")
         {
-            if (!IsPCVersion)
-                throw new NotSupportedException("Extracting Xbox 360 archives is not supported.");
-
             if (string.IsNullOrEmpty(in_path))
                 in_path = FileSystemHelper.GetDirectoryNameOfFileName(Location);
 
@@ -144,7 +153,6 @@ namespace HyperLib.Formats.Barracuda
                 var name = $"{file.Name}.{file.Type}.bin";
 
                 Logger.Log($"Exporting file: {name}");
-
 #if !DEBUG
                 try
 #endif
@@ -158,11 +166,11 @@ namespace HyperLib.Formats.Barracuda
                     {
                         if (IsPCVersion)
                         {
-                            File.WriteAllBytes(filePath, ZLibStreamExtensions.Decompress(file.Data));
+                            File.WriteAllBytes(filePath, ZLib.Decompress(file.Data));
                         }
                         else
                         {
-                            // TODO: XCompression.
+                            File.WriteAllBytes(filePath, XCompress.Decompress(file.Data, (int)file.Size));
                         }
                     }
                     else
@@ -193,12 +201,12 @@ namespace HyperLib.Formats.Barracuda
 
         public ArchiveFile() { }
 
-        public ArchiveFile(string in_name, uint in_size, uint in_compressedSize, uint in_hash, byte[] in_data)
+        public ArchiveFile(string in_name, uint in_size, uint in_compressedSize, uint in_type, uint in_hash, byte[] in_data)
         {
-            Name = FileSystemHelper.TruncateAllExtensions(in_name);
+            Name = in_name;
             Size = in_size;
             CompressedSize = in_compressedSize;
-            Type = GetTypeFromName(in_name);
+            Type = in_type;
             CRC32 = Type == 0 ? 0 : in_hash;
             IsCompressed = in_compressedSize > 0;
             Data = in_data;

@@ -1,11 +1,14 @@
 ﻿using System.IO.Compression;
 
-namespace HyperLib.IO.Extensions
+namespace HyperLib.IO.Compression
 {
-    public static class ZLibStreamExtensions
+    public static class ZLib
     {
         public static byte[] Compress(byte[] in_uncompressedData, CompressionLevel in_compressionLevel = CompressionLevel.Optimal)
         {
+            if (in_compressionLevel == CompressionLevel.NoCompression)
+                return in_uncompressedData;
+
             using var result = new MemoryStream();
             using var zlib = new ZLibStream(result, in_compressionLevel);
 

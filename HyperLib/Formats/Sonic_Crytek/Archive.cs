@@ -140,7 +140,6 @@ namespace HyperLib.Formats.Sonic_Crytek
                     var file = Files[i];
 
                     Logger.Log($"Exporting file: {file.Name}");
-
 #if !DEBUG
                     try
 #endif
@@ -164,7 +163,6 @@ namespace HyperLib.Formats.Sonic_Crytek
                         Logger.Error($"Exporting failed: {file}\nReason: {ex}");
                     }
 #endif
-
                     // Export file name to metadata.
                     writer.WriteLine(file.Name);
                 }

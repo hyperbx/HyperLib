@@ -1,4 +1,4 @@
-﻿namespace HyperLib.IO
+﻿namespace HyperLib.IO.Crypto
 {
     public class CRC32
     {
@@ -16,7 +16,7 @@
                 {
                     if ((crc & 1) == 1)
                     {
-                        crc = (crc >> 1) ^ _polynomial;
+                        crc = crc >> 1 ^ _polynomial;
                     }
                     else
                     {
@@ -34,7 +34,7 @@
             int b;
 
             while ((b = in_stream.ReadByte()) != -1)
-                crc = (crc >> 8) ^ _table[(crc & 0xFF) ^ (uint)b];
+                crc = crc >> 8 ^ _table[crc & 0xFF ^ (uint)b];
 
             return ~crc;
         }
