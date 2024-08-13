@@ -63,5 +63,10 @@ namespace HyperLib.IO.Extensions
                    ((uint)buf[0] << 16 | (uint)buf[1] << 8 | buf[2]) :
                    ((uint)buf[2] << 16 | (uint)buf[1] << 8 | buf[0]);
         }
+
+        public static void JumpTo(this BinaryValueReader in_reader, long in_offset)
+        {
+            in_reader.Seek(in_offset, SeekOrigin.Begin);
+        }
     }
 }

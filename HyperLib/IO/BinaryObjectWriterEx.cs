@@ -1,22 +1,19 @@
 ﻿using Amicitia.IO;
-using Amicitia.IO.Binary;
-using Amicitia.IO.Streams;
 using HyperLib.IO.Extensions;
-using System.Text;
 
 namespace HyperLib.IO
 {
-    public class BinaryValueWriterEx : BinaryValueWriter
+    public class BinaryObjectWriterEx : BinaryObjectWriter
     {
-        private Dictionary<string, long> _tempFields = new();
+        private readonly Dictionary<string, long> _tempFields = [];
 
-        public BinaryValueWriterEx(string filePath, Endianness endianness, Encoding encoding = null)
+        public BinaryObjectWriterEx(string filePath, Endianness endianness, Encoding encoding = null)
             : base(filePath, endianness, encoding) { }
 
-        public BinaryValueWriterEx(string filePath, FileStreamingMode fileStreamingMode, Endianness endianness, Encoding encoding = null, int bufferSize = 1048576)
+        public BinaryObjectWriterEx(string filePath, FileStreamingMode fileStreamingMode, Endianness endianness, Encoding encoding = null, int bufferSize = 1048576)
             : base(filePath, fileStreamingMode, endianness, encoding, bufferSize) { }
 
-        public BinaryValueWriterEx(Stream stream, StreamOwnership streamOwnership, Endianness endianness, Encoding encoding = null, string fileName = null, int blockSize = 1048576)
+        public BinaryObjectWriterEx(Stream stream, StreamOwnership streamOwnership, Endianness endianness, Encoding encoding = null, string fileName = null, int blockSize = 1048576)
             : base(stream, streamOwnership, endianness, encoding, fileName, blockSize) { }
 
         public void CreateTempField(string in_name, long in_offset, int in_size)

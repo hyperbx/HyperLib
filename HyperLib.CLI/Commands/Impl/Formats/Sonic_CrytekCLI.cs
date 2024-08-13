@@ -2,8 +2,11 @@
 
 namespace HyperLib.CLI.Commands.Impl.Formats
 {
-    [Command("Sonic_Crytek", "rol", [typeof(string), typeof(string)], "Sonic Boom: Rise of Lyric", "\n\t--Sonic_Crytek Archive [file|directory] [opt: destination]")]
-    public class Sonic_Crytek : ICommand
+    [Command("Sonic_Crytek", "rol", [typeof(string), typeof(string)], "Sonic Boom: Rise of Lyric",
+    [
+        "/Archive [\"file\"|\"directory\"] [opt: \"destination\"]"
+    ])]
+    public class Sonic_CrytekCLI : ICommand
     {
         public void Execute(List<Command> in_commands, Command in_command)
         {
@@ -15,8 +18,8 @@ namespace HyperLib.CLI.Commands.Impl.Formats
 
             switch (in_command.Inputs[0] as string)
             {
-                case "Archive":
-                case "stream":
+                case "/Archive":
+                case "/stream":
                     CommandHelper.HandleArchiveType<Archive>(inputPath, outputPath);
                     break;
             }

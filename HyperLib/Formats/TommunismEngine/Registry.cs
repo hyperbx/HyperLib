@@ -48,7 +48,7 @@ namespace HyperLib.Formats.TommunismEngine
 
         public override void Write(Stream in_stream, bool in_isOverwrite = true)
         {
-            var writer = new BinaryValueWriterEx(in_stream, StreamOwnership.Retain, Endianness.Little, Encoding.UTF8);
+            var writer = new BinaryObjectWriterEx(in_stream, StreamOwnership.Retain, Endianness.Little, Encoding.UTF8);
 
             var propertyNameCount = PropertyNames.Count;
 

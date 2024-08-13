@@ -2,17 +2,17 @@
 {
     public static class WriterExtensions
     {
-        public static void WriteNullBytes(this BinaryValueWriter in_writer, int in_count)
+        public static void WriteNullBytes(this BinaryObjectWriter in_writer, int in_count)
         {
             in_writer.WriteBytes(new byte[in_count]);
         }
 
-        public static void WriteInt24(this BinaryValueWriter in_writer, int in_value)
+        public static void WriteInt24(this BinaryObjectWriter in_writer, int in_value)
         {
             WriteUInt24(in_writer, (uint)in_value);
         }
 
-        public static void WriteUInt24(this BinaryValueWriter in_writer, uint in_value)
+        public static void WriteUInt24(this BinaryObjectWriter in_writer, uint in_value)
         {
             var buf = new byte[3];
 

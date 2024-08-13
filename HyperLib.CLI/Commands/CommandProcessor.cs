@@ -53,11 +53,11 @@ namespace HyperLib.CLI.Commands
 
                 Console.WriteLine();
 
-                if (!string.IsNullOrEmpty(command.Key.Usage))
-                    Console.WriteLine($"    Usage: {command.Key.Usage}");
-
-                if (!string.IsNullOrEmpty(command.Key.Example))
-                    Console.WriteLine($"    Example: {command.Key.Example}");
+                if (command.Key.Usage.Length > 0)
+                {
+                    var separator = $"\n\t--{command.Key.Name} ";
+                    Console.WriteLine($"    Usage:{separator}{string.Join(separator, command.Key.Usage)}");
+                }
             }
 
             Console.ReadKey();

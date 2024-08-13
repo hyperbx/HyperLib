@@ -21,6 +21,11 @@ namespace HyperLib.CLI.Commands
             }
         }
 
+        public static void HandleArchiveType<T>((string, string) in_inputs) where T : FileBase, new()
+        {
+            HandleArchiveType<T>(in_inputs.Item1, in_inputs.Item2);
+        }
+
         public static void HandleJsonType<T>(string in_inputPath, string in_outputPath) where T : FileBase, new()
         {
             var t = new T();
@@ -35,6 +40,45 @@ namespace HyperLib.CLI.Commands
                 t.Read(in_inputPath);
                 t.Export(in_outputPath);
             }
+        }
+
+        public static Dictionary<string, List<object>> GetCommandArguments(List<object> in_inputs)
+        {
+            var result = new Dictionary<string, List<object>>();
+            var argName = "/";
+            var argValues = new List<object>();
+
+            foreach (var input in in_inputs)
+            {
+                if (input is string out_input && out_input.StartsWith('/'))
+                {
+                    result.Add(argName, argValues);
+                    argValues.Clear();
+
+                    argName = out_input;
+                    continue;
+                }
+
+                argValues.Add(input);
+            }
+
+            return result;
+        }
+
+        public static (string InputPath, string OutputPath) GetInputOutputPaths(List<object> in_args)
+        {
+            var inputPath = string.Empty;
+            var outputPath = string.Empty;
+
+            if (in_args.Count != 0 && in_args[0] is string out_inputPath)
+            {
+                inputPath = out_inputPath;
+
+                if (in_args.Count <= 2 && in_args[1] is string out_outputPath)
+                    outputPath = out_outputPath;
+            }
+
+            return (inputPath, outputPath);
         }
     }
 }

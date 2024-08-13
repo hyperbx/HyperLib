@@ -3,10 +3,12 @@
 namespace HyperLib.CLI.Commands.Impl.Formats
 {
     [Command("TommunismEngine", "tom", [typeof(string), typeof(string)], "Super Meat Boy",
-        "\n\t--TommunismEngine Archive [file|directory] [opt: destination]\n" +
-        "\t--TommunismEngine Registry [file] [opt: destination]\n" +
-        "\t--TommunismEngine TexturePackage [file|directory] [opt: destination]")]
-    public class TommunismEngine : ICommand
+    [
+        "/Archive [\"file\"|\"directory\"] [opt: \"destination\"]",
+        "/Registry [\"file\"] [opt: \"destination\"]",
+        "/TexturePackage [\"file\"|\"directory\"] [opt: \"destination\"]"
+    ])]
+    public class TommunismEngineCLI : ICommand
     {
         public void Execute(List<Command> in_commands, Command in_command)
         {
@@ -18,18 +20,18 @@ namespace HyperLib.CLI.Commands.Impl.Formats
 
             switch (in_command.Inputs[0] as string)
             {
-                case "Archive":
-                case "dat":
+                case "/Archive":
+                case "/dat":
                     CommandHelper.HandleArchiveType<Archive>(inputPath, outputPath);
                     break;
 
-                case "Registry":
-                case "reg":
+                case "/Registry":
+                case "/reg":
                     CommandHelper.HandleJsonType<Registry>(inputPath, outputPath);
                     break;
 
-                case "TexturePackage":
-                case "tp":
+                case "/TexturePackage":
+                case "/tp":
                     CommandHelper.HandleArchiveType<TexturePackage>(inputPath, outputPath);
                     break;
             }
