@@ -5,7 +5,8 @@ namespace HyperLib.CLI.Commands.Impl.Formats
 {
     [Command("Barracuda", "hth", [typeof(string), typeof(string)], "Hydro Thunder Hurricane",
     [
-        "/Archive [opt: /PC] [\"file\"|\"directory\"] [opt: \"destination\"]"
+        "/Archive [opt: /PC] [\"file\"|\"directory\"] [opt: \"destination\"]",
+        "/JsonBinary [opt: /PC] [\"file\"|\"directory\"] [opt: \"destination\"]",
     ])]
     public class BarracudaCLI : ICommand
     {
@@ -24,20 +25,42 @@ namespace HyperLib.CLI.Commands.Impl.Formats
                 case "/Archive":
                 case "/apf":
                 {
-                    var archive = new Archive
+                    var apf = new Archive
                     {
                         IsPCVersion = isPCVersion
                     };
 
                     if (FileSystemHelper.GetBasicType(inputPath) == FileSystemHelper.EFileSystemBasicType.File)
                     {
-                        archive.Read(inputPath);
-                        archive.Export(outputPath);
+                        apf.Read(inputPath);
+                        apf.Export(outputPath);
                     }
                     else
                     {
-                        archive.Import(inputPath);
-                        archive.Write(outputPath ?? inputPath + archive.Extension);
+                        apf.Import(inputPath);
+                        apf.Write(outputPath ?? inputPath + apf.Extension);
+                    }
+
+                    break;
+                }
+
+                case "/JsonBinary":
+                case "/ajb":
+                {
+                    var ajb = new JsonBinary()
+                    {
+                        IsPCVersion = isPCVersion
+                    };
+
+                    if (Path.GetExtension(inputPath) == ".json")
+                    {
+                        ajb.Import(inputPath);
+                        ajb.Write(outputPath ?? FileSystemHelper.TruncateLastExtension(inputPath));
+                    }
+                    else
+                    {
+                        ajb.Read(inputPath);
+                        ajb.Export(outputPath);
                     }
 
                     break;

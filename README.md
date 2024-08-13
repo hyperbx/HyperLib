@@ -13,6 +13,7 @@ A work-in-progress general purpose library for software research.
 Name|Type|Support|[Platforms](## "This column indicates platforms the library has been tested and confirmed working with.")|[1:1](## "Can this library generate a binary identical file from the original source?")|Description
 ----|----|-------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|-----------
 [Archive](https://github.com/hyperbx/HyperLib/blob/main/HyperLib/Formats/Barracuda/Archive.cs)|`*.apf`|[📜](## "Read") [💾](## "Write") [📥](## "Import") [📤](## "Export")|PC, Xbox 360|[❌](## "The data is not sorted in the same way the original archive is, but the resulting archive is read correctly by the game.")|A zlib or XCompression compressed archive format.
+[JSON Binary](https://github.com/hyperbx/HyperLib/blob/main/HyperLib/Formats/Barracuda/JsonBinary.cs)|`*.bin`|[📜](## "Read") [💾](## "Write") [📥](## "Import") [📤](## "Export")|PC, Xbox 360|✔️|A proprietary binary JSON format.
 
 </details>
 

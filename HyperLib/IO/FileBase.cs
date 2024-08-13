@@ -69,6 +69,8 @@
             {
                 case EWriteMode.Logical:
                 {
+                    Location = in_path;
+
                     using (var stream = new FileStream(in_path, FileMode.Create, FileAccess.ReadWrite))
                         Write(stream);
 
