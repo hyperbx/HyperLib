@@ -3,6 +3,19 @@ A work-in-progress general purpose library for software research.
 
 # Formats
 
+<details><summary><h2>🛠️ Barracuda</h2></summary>
+
+### Developed by
+- [Vector Unit](https://www.vectorunit.com/)
+### Known for
+- Hydro Thunder Hurricane
+### Supported formats
+Name|Type|Support|[Platforms](## "This column indicates platforms the library has been tested and confirmed working with.")|[1:1](## "Can this library generate a binary identical file from the original source?")|Description
+----|----|-------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|-----------
+[Archive](https://github.com/hyperbx/HyperLib/blob/main/HyperLib/Formats/Barracuda/Archive.cs)|`*.apf`|[📜](## "Read") [💾](## "Write") [📥](## "Import") [📤](## "Export")|PC, [Xbox 360](## "The format is mapped, but requires XCompression on the archive files, despite there being a flag for files being uncompressed.")|[❌](## "The data is not sorted in the same way the original archive is, but the resulting archive is read correctly by the game.")|A zlib or XCompression compressed archive format.
+
+</details>
+
 <details><summary><h2>🛠️ Sonic_Crytek</h2></summary>
 
 ### Developed by
