@@ -1,5 +1,4 @@
 ﻿using HyperLib.Formats.Barracuda;
-using HyperLib.Helpers;
 using Spectre.Console;
 
 Console.WriteLine
@@ -34,28 +33,6 @@ bool IsTimedEventAsset()
     if (inputPath.Contains("AkTimedEventAsset"))
         return true;
 
-    var path = inputPath;
-
-    while (!string.IsNullOrEmpty(path))
-    {
-        path = Path.GetDirectoryName(path);
-
-        if (string.IsNullOrEmpty(path))
-            break;
-
-        /* Back out of the containing directory until we
-           reach the game's root directory, then confirm
-           if "Base.apf" is present.
-        
-           If it is present, it's safe to assume the user
-           is not in a directory where there wouldn't be any
-           timed event assets.
-        
-           Otherwise, we should prompt the user to confirm. */
-        if (File.Exists(Path.Combine(path, "Base.apf")))
-            return false;
-    }
-
     var result = AnsiConsole.Confirm("Is this a timed event asset?", false);
 
     Console.WriteLine();
@@ -65,36 +42,6 @@ bool IsTimedEventAsset()
 
 bool IsPCVersion()
 {
-    var path = inputPath;
-
-    while (!string.IsNullOrEmpty(path))
-    {
-        path = Path.GetDirectoryName(path);
-
-        if (string.IsNullOrEmpty(path))
-            break;
-
-        /* Back out of the containing directory until we
-           reach the game's root directory, then confirm
-           if "Base.apf" is present.
-        
-           If it is present, check if any of the archive's
-           root directories start with "Vu". If they do,
-           this directory is likely an extracted PC archive.
-        
-           Otherwise, we should prompt the user to confirm. */
-        if (File.Exists(Path.Combine(path, "Base.apf")))
-        {
-            path = Path.GetRelativePath(path, inputPath);
-            path = FileSystemHelper.OmitRootDirectory(path);
-
-            if (path.StartsWith("Vu"))
-                return true;
-
-            break;
-        }
-    }
-
     var result = AnsiConsole.Confirm("Is this the PC version?", false);
 
     Console.WriteLine();
