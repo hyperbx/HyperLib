@@ -1,4 +1,5 @@
 ﻿using HyperLib.Formats.Barracuda;
+using HyperLib.Helpers;
 using Spectre.Console;
 
 Console.WriteLine
@@ -30,7 +31,7 @@ Console.WriteLine($"Path: {inputPath}\n");
 
 bool IsTimedEventAsset()
 {
-    if (inputPath.Contains("Base\\AkTimedEventAsset"))
+    if (inputPath.Contains("AkTimedEventAsset"))
         return true;
 
     var path = inputPath;
@@ -61,6 +62,55 @@ bool IsTimedEventAsset()
 
     return result;
 }
+
+bool IsPCVersion()
+{
+    var path = inputPath;
+
+    while (!string.IsNullOrEmpty(path))
+    {
+        path = Path.GetDirectoryName(path);
+
+        if (string.IsNullOrEmpty(path))
+            break;
+
+        /* Back out of the containing directory until we
+           reach the game's root directory, then confirm
+           if "Base.apf" is present.
+        
+           If it is present, check if any of the archive's
+           root directories start with "Vu". If they do,
+           this directory is likely an extracted PC archive.
+        
+           Otherwise, we should prompt the user to confirm. */
+        if (File.Exists(Path.Combine(path, "Base.apf")))
+        {
+            path = Path.GetRelativePath(path, inputPath);
+            path = FileSystemHelper.OmitFirstDirectory(path);
+
+            foreach (var dir in Directory.EnumerateDirectories(path))
+            {
+                var fileName = Path.GetFileName(dir);
+
+                if (fileName == "Assets")
+                    continue;
+
+                if (fileName.StartsWith("Vu"))
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
+    var result = AnsiConsole.Confirm("Is this the PC version?", false);
+
+    Console.WriteLine();
+
+    return result;
+}
+
+var isPCVersion = IsPCVersion();
 
 if (File.Exists(inputPath))
 {
@@ -96,7 +146,7 @@ if (File.Exists(inputPath))
 
             if (IsTimedEventAsset())
             {
-                var tev = new TimedEvent();
+                var tev = new TimedEvent() { IsPCVersion = isPCVersion };
                 tev.Import(inputPath);
                 tev.Write(outputPath);
 
@@ -104,7 +154,7 @@ if (File.Exists(inputPath))
             }
             else
             {
-                var ajb = new JsonBinary();
+                var ajb = new JsonBinary() { IsPCVersion = isPCVersion };
                 ajb.Import(inputPath);
                 ajb.Write(outputPath);
 
@@ -121,7 +171,7 @@ if (File.Exists(inputPath))
 }
 else if (Directory.Exists(inputPath))
 {
-    var apf = new Archive();
+    var apf = new Archive() { IsPCVersion = isPCVersion };
     apf.Import(inputPath);
 
     Console.WriteLine("\nWriting archive...");
