@@ -108,19 +108,6 @@ namespace HyperLib.Formats.Barracuda
             if (!Directory.Exists(in_path))
                 return;
 
-            // Determine whether the input directory is for the PC version.
-            foreach (var dir in Directory.EnumerateDirectories(in_path))
-            {
-                var fileName = Path.GetFileName(dir);
-
-                if (fileName == "Assets")
-                    continue;
-
-                IsPCVersion = fileName.StartsWith("Vu");
-
-                break;
-            }
-
             foreach (var file in Directory.EnumerateFiles(in_path, "*", SearchOption.AllDirectories))
             {
                 var relativePath = FileSystemHelper.GetRelativeDirectoryName(in_path, FileSystemHelper.TruncateAllExtensions(file), true);
