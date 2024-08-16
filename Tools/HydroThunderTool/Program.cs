@@ -7,6 +7,14 @@ Console.WriteLine
     "Written by Hyper\n"
 );
 
+AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+{
+    Console.WriteLine("An unhandled exception has occurred.\n");
+    Console.WriteLine(e.ExceptionObject.ToString());
+    Console.WriteLine("\nPress any key to exit...");
+    Console.ReadKey();
+};
+
 if (args.Length <= 0)
 {
     Console.WriteLine("Usage: drag and drop a supported file into HydroThunderTool.exe\n");
