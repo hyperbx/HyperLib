@@ -4,6 +4,8 @@ namespace HyperLib.Formats.Barracuda
 {
     public class TimedEvent : FileBase
     {
+        public bool IsPCVersion { get; set; } = false;
+
         public List<TimedEventWrapper> Events { get; set; } = [];
 
         public TimedEvent() { }
@@ -32,7 +34,7 @@ namespace HyperLib.Formats.Barracuda
             writer.Write(Events.Count);
 
             foreach (var @event in Events)
-                @event.Write(writer);
+                @event.Write(writer, IsPCVersion);
         }
 
         public override void Import(string in_path)
@@ -74,7 +76,7 @@ namespace HyperLib.Formats.Barracuda
             Root = ajb.Root;
         }
 
-        public void Write(BinaryObjectWriterEx in_writer)
+        public void Write(BinaryObjectWriterEx in_writer, bool in_isPCVersion)
         {
             in_writer.WriteSingle(UserData1);
             in_writer.WriteString(StringBinaryFormat.NullTerminated, Name);
@@ -82,6 +84,7 @@ namespace HyperLib.Formats.Barracuda
 
             var ajb = new JsonBinary()
             {
+                IsPCVersion = in_isPCVersion,
                 Root = Root
             };
 

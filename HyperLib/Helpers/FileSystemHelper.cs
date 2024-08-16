@@ -60,12 +60,21 @@
             return Path.Combine(Path.GetDirectoryName(in_filePath), name);
         }
 
-        public static string OmitFirstDirectory(string in_path)
+        public static string OmitRootDirectory(string in_path)
         {
             var index = in_path.IndexOf(Path.DirectorySeparatorChar);
 
             return index >= 0
                 ? in_path[(index + 1)..]
+                : in_path;
+        }
+
+        public static string GetRootDirectory(string in_path)
+        {
+            var index = in_path.IndexOf(Path.DirectorySeparatorChar);
+
+            return index >= 0
+                ? in_path[..(index + 1)]
                 : in_path;
         }
 

@@ -86,20 +86,12 @@ bool IsPCVersion()
         if (File.Exists(Path.Combine(path, "Base.apf")))
         {
             path = Path.GetRelativePath(path, inputPath);
-            path = FileSystemHelper.OmitFirstDirectory(path);
+            path = FileSystemHelper.OmitRootDirectory(path);
 
-            foreach (var dir in Directory.EnumerateDirectories(path))
-            {
-                var fileName = Path.GetFileName(dir);
+            if (path.StartsWith("Vu"))
+                return true;
 
-                if (fileName == "Assets")
-                    continue;
-
-                if (fileName.StartsWith("Vu"))
-                    return true;
-            }
-
-            return false;
+            break;
         }
     }
 
@@ -109,8 +101,6 @@ bool IsPCVersion()
 
     return result;
 }
-
-var isPCVersion = IsPCVersion();
 
 if (File.Exists(inputPath))
 {
@@ -146,7 +136,7 @@ if (File.Exists(inputPath))
 
             if (IsTimedEventAsset())
             {
-                var tev = new TimedEvent() { IsPCVersion = isPCVersion };
+                var tev = new TimedEvent() { IsPCVersion = IsPCVersion() };
                 tev.Import(inputPath);
                 tev.Write(outputPath);
 
@@ -154,7 +144,7 @@ if (File.Exists(inputPath))
             }
             else
             {
-                var ajb = new JsonBinary() { IsPCVersion = isPCVersion };
+                var ajb = new JsonBinary() { IsPCVersion = IsPCVersion() };
                 ajb.Import(inputPath);
                 ajb.Write(outputPath);
 
@@ -171,7 +161,7 @@ if (File.Exists(inputPath))
 }
 else if (Directory.Exists(inputPath))
 {
-    var apf = new Archive() { IsPCVersion = isPCVersion };
+    var apf = new Archive() { IsPCVersion = IsPCVersion() };
     apf.Import(inputPath);
 
     Console.WriteLine("\nWriting archive...");
