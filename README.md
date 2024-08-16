@@ -14,6 +14,7 @@ Name|Type|Support|[Platforms](## "This column indicates platforms the library ha
 ----|----|-------|---------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|-----------
 [Archive](https://github.com/hyperbx/HyperLib/blob/main/HyperLib/Formats/Barracuda/Archive.cs)|`*.apf`|[📜](## "Read") [💾](## "Write") [📥](## "Import") [📤](## "Export")|PC, Xbox 360|[❌](## "The data is not sorted in the same way the original archive is, but the resulting archive is read correctly by the game.")|A zlib or XCompression compressed archive format.
 [JSON Binary](https://github.com/hyperbx/HyperLib/blob/main/HyperLib/Formats/Barracuda/JsonBinary.cs)|`*.bin`|[📜](## "Read") [💾](## "Write") [📥](## "Import") [📤](## "Export")|PC, Xbox 360|✔️|A proprietary binary JSON format.
+[Timed Event](https://github.com/hyperbx/HyperLib/blob/main/HyperLib/Formats/Barracuda/TimedEvent.cs)|`*.bin`|[📜](## "Read") [💾](## "Write") [📥](## "Import") [📤](## "Export")|PC, Xbox 360|✔️|A wrapper for the JSON binary format for storing user data for events.
 
 </details>
 
