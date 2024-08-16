@@ -29,7 +29,7 @@ namespace HyperLib.Formats.Barracuda
 
         public JsonBinary(string in_path) : base(in_path) { }
 
-        public EHeaderType GetBinaryType(BinaryObjectReader in_reader, uint in_expectedSig)
+        public EHeaderType GetHeaderType(BinaryObjectReader in_reader, uint in_expectedSig)
         {
             // 0
             var sig = in_reader.ReadUInt32();
@@ -69,11 +69,11 @@ namespace HyperLib.Formats.Barracuda
         {
             if (in_isVerifyHeader)
             {
-                Header.Type = GetBinaryType(in_reader, _xboxSignature);
+                Header.Type = GetHeaderType(in_reader, _xboxSignature);
 
                 if (Header.Type == EHeaderType.Unknown)
                 {
-                    Header.Type = GetBinaryType(in_reader, _pcSignature);
+                    Header.Type = GetHeaderType(in_reader, _pcSignature);
 
                     if (Header.Type != EHeaderType.Unknown)
                         IsPCVersion = true;
