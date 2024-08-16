@@ -22,10 +22,36 @@ Console.WriteLine($"Path: {inputPath}\n");
 
 bool IsTimedEventAsset()
 {
-    if (inputPath.Contains("AkTimedEventAsset"))
+    if (inputPath.Contains("Base\\AkTimedEventAsset"))
         return true;
 
-    return AnsiConsole.Confirm("Is this a timed event asset?", false);
+    var path = inputPath;
+
+    while (!string.IsNullOrEmpty(path))
+    {
+        path = Path.GetDirectoryName(path);
+
+        if (string.IsNullOrEmpty(path))
+            break;
+
+        /* Back out of the containing directory until we
+           reach the game's root directory, then confirm
+           if "Base.apf" is present.
+        
+           If it is present, it's safe to assume the user
+           is not in a directory where there wouldn't be any
+           timed event assets.
+        
+           Otherwise, we should prompt the user to confirm. */
+        if (File.Exists(Path.Combine(path, "Base.apf")))
+            return false;
+    }
+
+    var result = AnsiConsole.Confirm("Is this a timed event asset?", false);
+
+    Console.WriteLine();
+
+    return result;
 }
 
 if (File.Exists(inputPath))
@@ -66,7 +92,7 @@ if (File.Exists(inputPath))
                 tev.Import(inputPath);
                 tev.Write(outputPath);
 
-                Console.WriteLine("Imported as a timed event asset.");
+                Console.WriteLine("Exported as a timed event asset.");
             }
             else
             {
@@ -74,7 +100,7 @@ if (File.Exists(inputPath))
                 ajb.Import(inputPath);
                 ajb.Write(outputPath);
 
-                Console.WriteLine("Imported as a JSON binary asset.");
+                Console.WriteLine("Exported as a JSON binary asset.");
             }
 
             break;
