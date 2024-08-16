@@ -11,7 +11,7 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "HyperLib.Shared", "HyperLib
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{C5275C4D-04CD-422B-BEB2-CAEE3F4199B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydroThunderRepacker", "Tools\HydroThunderRepacker\HydroThunderRepacker.csproj", "{BE1F9EF6-9EAB-473C-87B6-B4C1267B61A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HydroThunderTool", "Tools\HydroThunderTool\HydroThunderTool.csproj", "{5DB41FBA-BE43-47AF-98DF-B12908E870BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,16 +27,16 @@ Global
 		{B35D790A-BD46-40CB-B6A0-222A6C35D1B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B35D790A-BD46-40CB-B6A0-222A6C35D1B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B35D790A-BD46-40CB-B6A0-222A6C35D1B8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BE1F9EF6-9EAB-473C-87B6-B4C1267B61A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BE1F9EF6-9EAB-473C-87B6-B4C1267B61A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BE1F9EF6-9EAB-473C-87B6-B4C1267B61A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BE1F9EF6-9EAB-473C-87B6-B4C1267B61A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DB41FBA-BE43-47AF-98DF-B12908E870BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DB41FBA-BE43-47AF-98DF-B12908E870BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DB41FBA-BE43-47AF-98DF-B12908E870BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DB41FBA-BE43-47AF-98DF-B12908E870BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{BE1F9EF6-9EAB-473C-87B6-B4C1267B61A9} = {C5275C4D-04CD-422B-BEB2-CAEE3F4199B4}
+		{5DB41FBA-BE43-47AF-98DF-B12908E870BA} = {C5275C4D-04CD-422B-BEB2-CAEE3F4199B4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {40B663AA-8BE3-4978-85EB-D942574B6728}

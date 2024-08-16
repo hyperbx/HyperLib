@@ -1,5 +1,6 @@
 ﻿using HyperLib.IO.Extensions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
 namespace HyperLib.Formats.Barracuda
@@ -12,42 +13,99 @@ namespace HyperLib.Formats.Barracuda
 
         public bool IsPCVersion { get; set; } = false;
 
+        public class HeaderInfo
+        {
+            [JsonConverter(typeof(StringEnumConverter))]
+            public EHeaderType Type { get; set; }
+
+            public uint Identifier { get; set; }
+        }
+
+        public HeaderInfo Header { get; set; } = new();
+
         public object Root { get; set; }
 
         public JsonBinary() { }
 
         public JsonBinary(string in_path) : base(in_path) { }
 
-        public override void Read(Stream in_stream)
+        public EHeaderType GetBinaryType(BinaryObjectReader in_reader, uint in_expectedSig)
         {
-            var reader = new BinaryObjectReader(in_stream, StreamOwnership.Retain, Endianness.Big);
+            // 0
+            var sig = in_reader.ReadUInt32();
 
-            // Type 4 files have a file size field at the start.
-            if (ArchiveFile.GetTypeFromName(Location) == 4)
-                reader.Seek(4, SeekOrigin.Begin);
-
-            if (!reader.IsSignatureValid(_xboxSignature, false))
+            if (sig != in_expectedSig)
             {
-                reader.Seek(0, SeekOrigin.Begin);
+                // 4
+                sig = in_reader.ReadUInt32();
 
-                if (reader.IsSignatureValid(_pcSignature, false))
+                if (sig != in_expectedSig)
                 {
-                    IsPCVersion = true;
+                    // 8
+                    sig = in_reader.ReadUInt32();
+
+                    if (sig == in_expectedSig)
+                        return EHeaderType.Identifier;
                 }
                 else
                 {
-                    throw new NotSupportedException("Could not identify JSON binary type.");
+                    return EHeaderType.Size;
+                }
+            }
+            else
+            {
+                return EHeaderType.Default;
+            }
+
+            return EHeaderType.Unknown;
+        }
+
+        public override void Read(Stream in_stream)
+        {
+            ReadObject(new BinaryObjectReader(in_stream, StreamOwnership.Retain, Endianness.Big));
+        }
+
+        public void ReadObject(BinaryObjectReader in_reader, bool in_isVerifyHeader = true)
+        {
+            if (in_isVerifyHeader)
+            {
+                Header.Type = GetBinaryType(in_reader, _xboxSignature);
+
+                if (Header.Type == EHeaderType.Unknown)
+                {
+                    Header.Type = GetBinaryType(in_reader, _pcSignature);
+
+                    if (Header.Type != EHeaderType.Unknown)
+                        IsPCVersion = true;
+                }
+
+                in_reader.Seek(0, SeekOrigin.Begin);
+
+                switch (Header.Type)
+                {
+                    case EHeaderType.Size:
+                        in_reader.Seek(4, SeekOrigin.Current);
+                        break;
+
+                    case EHeaderType.Identifier:
+                        Header.Identifier = in_reader.ReadUInt32();
+                        in_reader.Seek(4, SeekOrigin.Current);
+                        break;
+
+                    case EHeaderType.Unknown:
+                        throw new NotSupportedException("Could not identify JSON binary type.");
                 }
             }
 
-            var version = reader.ReadUInt32();
-            var rootNodeType = (EJsonValueType)reader.ReadUInt32();
+            var signature = in_reader.ReadUInt32();
+            var version = in_reader.ReadUInt32();
+            var rootNodeType = (EJsonValueType)in_reader.ReadUInt32();
 
             // This file is an empty JSON file.
             if (rootNodeType == EJsonValueType.Null)
                 return;
 
-            var rootNodeCount = reader.ReadUInt32();
+            var rootNodeCount = in_reader.ReadUInt32();
 
             if (rootNodeType == EJsonValueType.Object)
             {
@@ -56,7 +114,7 @@ namespace HyperLib.Formats.Barracuda
                 // Populate root node recursively.
                 for (int i = 0; i < rootNodeCount; i++)
                 {
-                    var node = ReadKeys(reader);
+                    var node = ReadKeys(in_reader);
 
                     rootNode.Add(node.Key, node.Value);
                 }
@@ -68,10 +126,10 @@ namespace HyperLib.Formats.Barracuda
                 var rootNode = new List<object>();
 
                 // Seek backwards to allow reading node count from ReadValues method.
-                reader.Seek(-4, SeekOrigin.Current);
+                in_reader.Seek(-4, SeekOrigin.Current);
 
                 // Populate root node recursively.
-                rootNode.AddRange((List<object>)ReadValues(reader, rootNodeType));
+                rootNode.AddRange((List<object>)ReadValues(in_reader, rootNodeType));
 
                 Root = rootNode;
             }
@@ -151,43 +209,85 @@ namespace HyperLib.Formats.Barracuda
 
         public override void Write(Stream in_stream, bool in_isOverwrite = true)
         {
-            var writer = new BinaryObjectWriterEx(in_stream, StreamOwnership.Retain, Endianness.Big);
+            WriteBinary(new BinaryObjectWriterEx(in_stream, StreamOwnership.Retain, Endianness.Big));
+        }
 
-            // Type 4 files have a file size field at the start.
-            if (ArchiveFile.GetTypeFromName(Location) == 4)
-                writer.CreateTempField<uint>("fileSize");
-
-            writer.Write(_xboxSignature);
-            writer.Write(_version);
-
-            var rootNodeType = Root.GetType();
-
-            if (rootNodeType == typeof(Dictionary<string, object>))
+        public void WriteBinary(BinaryObjectWriterEx in_writer)
+        {
+            switch (Header.Type)
             {
-                var root = (Dictionary<string, object>)Root;
+                case EHeaderType.Size:
+                    in_writer.CreateTempField<uint>("fileSize");
+                    break;
 
-                writer.Write(EJsonValueType.Object);
-                writer.Write(root.Count);
+                case EHeaderType.Identifier:
+                    in_writer.CreateTempField<uint>("identifier");
+                    in_writer.CreateTempField<uint>("fileSize");
+                    break;
 
-                // Write nodes recursively.
-                foreach (var node in root)
-                    WriteKeys(writer, node.Key, node.Value);
+                case EHeaderType.Unknown:
+                    throw new NotSupportedException("Cannot write JSON binary without known type.");
             }
-            else if (rootNodeType == typeof(List<object>))
-            {
-                writer.Write(EJsonValueType.Array);
 
-                // Write values recursively.
-                WriteValues(writer, JArray.FromObject(Root));
+            in_writer.Write(IsPCVersion ? _pcSignature : _xboxSignature);
+            in_writer.Write(_version);
+
+            if (Root != null)
+            {
+                var rootNodeType = Root.GetType();
+
+                /* Convert JSON objects to CLR types, in
+                   case the user set the root node as such */
+                if (rootNodeType == typeof(JObject))
+                {
+                    Root = ((JObject)Root).ToObject<Dictionary<string, object>>()!;
+                }
+                else if (rootNodeType == typeof(JArray))
+                {
+                    Root = ((JArray)Root).ToObject<List<object>>()!;
+                }
+
+                rootNodeType = Root.GetType();
+
+                if (rootNodeType == typeof(Dictionary<string, object>))
+                {
+                    var root = (Dictionary<string, object>)Root;
+
+                    in_writer.Write(EJsonValueType.Object);
+                    in_writer.Write(root.Count);
+
+                    // Write nodes recursively.
+                    foreach (var node in root)
+                        WriteKeys(in_writer, node.Key, node.Value);
+                }
+                else if (rootNodeType == typeof(List<object>))
+                {
+                    in_writer.Write(EJsonValueType.Array);
+
+                    // Write values recursively.
+                    WriteValues(in_writer, JArray.FromObject(Root));
+                }
+                else
+                {
+                    throw new NotSupportedException($"Type {rootNodeType.Name} is not supported as root.");
+                }
             }
             else
             {
-                throw new NotSupportedException($"Type {rootNodeType.Name} is not supported as root.");
+                in_writer.Write(0);
             }
 
-            // Write size field for type 4 files.
-            if (ArchiveFile.GetTypeFromName(Location) == 4)
-                writer.WriteTempField("fileSize", (uint)writer.Position - 4);
+            switch (Header.Type)
+            {
+                case EHeaderType.Size:
+                    in_writer.WriteTempField("fileSize", (uint)in_writer.Position - 4);
+                    break;
+
+                case EHeaderType.Identifier:
+                    in_writer.WriteTempField("identifier", Header.Identifier);
+                    in_writer.WriteTempField("fileSize", (uint)in_writer.Position - 8);
+                    break;
+            }
         }
 
         private static EJsonValueType TransformCLRTypeToJsonType(Type? in_type)
@@ -323,10 +423,17 @@ namespace HyperLib.Formats.Barracuda
             {
                 Root = JsonConvert.DeserializeObject<List<object>>(json)!;
             }
-            else
+            else if (root != null)
             {
                 throw new NotSupportedException("Unsupported root node.");
             }
+
+            var metadata = Path.ChangeExtension(in_path, ".meta");
+
+            if (!File.Exists(metadata))
+                return;
+
+            Header = JsonConvert.DeserializeObject<HeaderInfo>(File.ReadAllText(metadata))!;
         }
 
         public override void Export(string in_path = "")
@@ -335,6 +442,7 @@ namespace HyperLib.Formats.Barracuda
                 in_path = Path.ChangeExtension(Location, ".json");
 
             File.WriteAllText(in_path, JsonConvert.SerializeObject(Root, Formatting.Indented));
+            File.WriteAllText(Path.ChangeExtension(in_path, ".meta"), JsonConvert.SerializeObject(Header, Formatting.Indented));
         }
     }
 
@@ -348,5 +456,25 @@ namespace HyperLib.Formats.Barracuda
         Array,
         Object,
         Int64
+    }
+
+    public enum EHeaderType
+    {
+        Unknown = -1,
+
+        /// <summary>
+        /// The binary starts with the signature at offset zero.
+        /// </summary>
+        Default,
+
+        /// <summary>
+        /// The binary starts with the file size (minus 4) at offset zero.
+        /// </summary>
+        Size,
+
+        /// <summary>
+        /// The binary starts with a 32-bit integer and the file size (minus 8) at offset zero.
+        /// </summary>
+        Identifier
     }
 }
