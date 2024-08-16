@@ -16,7 +16,7 @@ namespace HyperLib.Formats.Barracuda
         public class HeaderInfo
         {
             [JsonConverter(typeof(StringEnumConverter))]
-            public EHeaderType Type { get; set; }
+            public EHeaderType Type { get; set; } = EHeaderType.Default;
 
             public uint Identifier { get; set; }
         }
@@ -442,6 +442,10 @@ namespace HyperLib.Formats.Barracuda
                 in_path = Path.ChangeExtension(Location, ".json");
 
             File.WriteAllText(in_path, JsonConvert.SerializeObject(Root, Formatting.Indented));
+
+            if (Header.Type == EHeaderType.Default)
+                return;
+
             File.WriteAllText(Path.ChangeExtension(in_path, ".meta"), JsonConvert.SerializeObject(Header, Formatting.Indented));
         }
     }
